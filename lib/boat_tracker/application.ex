@@ -4,6 +4,7 @@ defmodule BoatTracker.Application do
   @moduledoc false
 
   use Application
+  alias BoatTracker.GPS
 
   @impl true
   def start(_type, _args) do
@@ -11,12 +12,8 @@ defmodule BoatTracker.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: BoatTracker.Supervisor]
 
-    children =
-      [
-        # Children for all targets
-        # Starts a worker by calling: BoatTracker.Worker.start_link(arg)
-        # {BoatTracker.Worker, arg},
-      ] ++ children(target())
+    # Children for all targets
+    children = [GPS | children(target())]
 
     Supervisor.start_link(children, opts)
   end
