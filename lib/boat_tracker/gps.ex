@@ -5,8 +5,22 @@ defmodule BoatTracker.GPS do
 
   @impl true
   def init(state) do
-    # TODO: Read and print coordinates
+    print_coordinates()
 
     {:ok, state}
+  end
+
+  @impl true
+  def handle_info(:print, state) do
+    print_coordinates()
+
+    {:noreply, state}
+  end
+
+  defp print_coordinates do
+    # TODO: Read coordinates
+
+    IO.puts("printing for future coordinates!")
+    Process.send_after(self(), :print, 1000)
   end
 end
