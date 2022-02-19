@@ -8,7 +8,10 @@ defmodule BoatTracker.Sentences.Parser do
     content_list = String.split(content, ",")
 
     if valid_content_size?(:rmc, content_list) do
-      %RMC{time: parse_time(Enum.at(content_list, 0))}
+      %RMC{
+        time: parse_time(Enum.at(content_list, 0)),
+        status: parse_string(Enum.at(content_list, 1))
+      }
     end
   end
 
@@ -36,4 +39,7 @@ defmodule BoatTracker.Sentences.Parser do
   end
 
   defp parse_hours_minutes_seconds_ms(_), do: nil
+
+  defp parse_string(""), do: nil
+  defp parse_string(value), do: value
 end
