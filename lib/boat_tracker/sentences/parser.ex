@@ -10,7 +10,8 @@ defmodule BoatTracker.Sentences.Parser do
     if valid_content_size?(:rmc, content_list) do
       %RMC{
         time: parse_time(Enum.at(content_list, 0)),
-        status: parse_string(Enum.at(content_list, 1))
+        status: parse_string(Enum.at(content_list, 1)),
+        latitude: parse_latitude(Enum.at(content_list, 2), Enum.at(content_list, 3))
       }
     end
   end
@@ -42,4 +43,23 @@ defmodule BoatTracker.Sentences.Parser do
 
   defp parse_string(""), do: nil
   defp parse_string(value), do: value
+
+  defp parse_latitude("", ""), do: nil
+
+  defp parse_latitude(string, bearing) do
+    {deg, _} =
+      string
+      |> String.slice(0, 2)
+      |> Float.parse()
+
+    {min, _} =
+      string
+      |> String.slice(2, 100)
+      |> Float.parse()
+
+    lat_to_decimal_degrees(deg, min, bearing)
+  end
+
+  defp lat_to_decimal_degrees(degrees, minutes, "N"), do: degrees + minutes / 60.0
+  defp lat_to_decimal_degrees(degrees, minutes, "S"), do: (degrees + minutes / 60.0) * -1.0
 end
