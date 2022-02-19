@@ -11,7 +11,8 @@ defmodule BoatTracker.Sentences.Parser do
       %RMC{
         time: parse_time(Enum.at(content_list, 0)),
         status: parse_string(Enum.at(content_list, 1)),
-        latitude: parse_latitude(Enum.at(content_list, 2), Enum.at(content_list, 3))
+        latitude: parse_latitude(Enum.at(content_list, 2), Enum.at(content_list, 3)),
+        longitude: parse_longitude(Enum.at(content_list, 4), Enum.at(content_list, 5))
       }
     end
   end
@@ -57,9 +58,28 @@ defmodule BoatTracker.Sentences.Parser do
       |> String.slice(2, 100)
       |> Float.parse()
 
-    lat_to_decimal_degrees(deg, min, bearing)
+    latitude_to_decimal_degrees(deg, min, bearing)
   end
 
-  defp lat_to_decimal_degrees(degrees, minutes, "N"), do: degrees + minutes / 60.0
-  defp lat_to_decimal_degrees(degrees, minutes, "S"), do: (degrees + minutes / 60.0) * -1.0
+  defp latitude_to_decimal_degrees(degrees, minutes, "N"), do: degrees + minutes / 60.0
+  defp latitude_to_decimal_degrees(degrees, minutes, "S"), do: (degrees + minutes / 60.0) * -1.0
+
+  defp parse_longitude("", ""), do: nil
+
+  defp parse_longitude(string, bearing) do
+    {deg, _} =
+      string
+      |> String.slice(0, 3)
+      |> Float.parse()
+
+    {min, _} =
+      string
+      |> String.slice(3, 100)
+      |> Float.parse()
+
+    longitude_to_decimal_degrees(deg, min, bearing)
+  end
+
+  defp longitude_to_decimal_degrees(degrees, minutes, "E"), do: degrees + minutes / 60.0
+  defp longitude_to_decimal_degrees(degrees, minutes, "W"), do: (degrees + minutes / 60.0) * -1.0
 end
