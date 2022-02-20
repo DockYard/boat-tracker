@@ -1,7 +1,7 @@
 defmodule BoatTracker.Sentences.Parser do
   alias BoatTracker.Sentences.RMC
 
-  @rmc_content_size 12
+  @rmc_content_size 11
   @time_size 6
 
   def parse("$GPRMC," <> content) do
@@ -12,7 +12,8 @@ defmodule BoatTracker.Sentences.Parser do
         time: parse_time(Enum.at(content_list, 0)),
         status: parse_string(Enum.at(content_list, 1)),
         latitude: parse_latitude(Enum.at(content_list, 2), Enum.at(content_list, 3)),
-        longitude: parse_longitude(Enum.at(content_list, 4), Enum.at(content_list, 5))
+        longitude: parse_longitude(Enum.at(content_list, 4), Enum.at(content_list, 5)),
+        speed: parse_float(Enum.at(content_list, 6))
       }
     end
   end
@@ -82,4 +83,12 @@ defmodule BoatTracker.Sentences.Parser do
 
   defp longitude_to_decimal_degrees(degrees, minutes, "E"), do: degrees + minutes / 60.0
   defp longitude_to_decimal_degrees(degrees, minutes, "W"), do: (degrees + minutes / 60.0) * -1.0
+
+  defp parse_float(""), do: nil
+
+  defp parse_float(value) do
+    value
+    |> Float.parse()
+    |> elem(0)
+  end
 end
