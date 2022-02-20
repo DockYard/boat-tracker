@@ -13,7 +13,8 @@ defmodule BoatTracker.Sentences.Parser do
         status: parse_string(Enum.at(content_list, 1)),
         latitude: parse_latitude(Enum.at(content_list, 2), Enum.at(content_list, 3)),
         longitude: parse_longitude(Enum.at(content_list, 4), Enum.at(content_list, 5)),
-        speed: parse_float(Enum.at(content_list, 6))
+        speed: parse_float(Enum.at(content_list, 6)),
+        track_angle: parse_float(Enum.at(content_list, 7))
       }
     end
   end
