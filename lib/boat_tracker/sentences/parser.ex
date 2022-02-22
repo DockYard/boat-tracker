@@ -3,6 +3,7 @@ defmodule BoatTracker.Sentences.Parser do
 
   @rmc_content_size 11
   @time_size 6
+  @date_size 6
 
   def parse("$GPRMC," <> content) do
     content_list = String.split(content, ",")
@@ -14,7 +15,8 @@ defmodule BoatTracker.Sentences.Parser do
         latitude: parse_latitude(Enum.at(content_list, 2), Enum.at(content_list, 3)),
         longitude: parse_longitude(Enum.at(content_list, 4), Enum.at(content_list, 5)),
         speed: parse_float(Enum.at(content_list, 6)),
-        track_angle: parse_float(Enum.at(content_list, 7))
+        track_angle: parse_float(Enum.at(content_list, 7)),
+        date: parse_date(Enum.at(content_list, 8))
       }
     end
   end
@@ -88,8 +90,32 @@ defmodule BoatTracker.Sentences.Parser do
   defp parse_float(""), do: nil
 
   defp parse_float(value) do
-    value
-    |> Float.parse()
-    |> elem(0)
+    {float, _} = Float.parse(value)
+
+    float
   end
+
+  defp parse_date(<<raw_date::binary-size(@date_size)>>) do
+    {day, _} =
+      raw_date
+      |> String.slice(0, 2)
+      |> Integer.parse()
+
+    {month, _} =
+      raw_date
+      |> String.slice(2, 2)
+      |> Integer.parse()
+
+    {year, _} =
+      raw_date
+      |> String.slice(4, 2)
+      |> String.replace_prefix("", "20")
+      |> Integer.parse()
+
+    {:ok, date} = Date.new(year, month, day)
+
+    date
+  end
+
+  defp parse_date(_raw_date), do: nil
 end
