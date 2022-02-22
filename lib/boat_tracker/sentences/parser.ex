@@ -53,16 +53,8 @@ defmodule BoatTracker.Sentences.Parser do
   defp parse_latitude("", ""), do: nil
 
   defp parse_latitude(string, bearing) do
-    {deg, _} =
-      string
-      |> String.slice(0, 2)
-      |> Float.parse()
-
-    {min, _} =
-      string
-      |> String.slice(2, 100)
-      |> Float.parse()
-
+    {deg, _} = Float.parse(String.slice(string, 0, 2))
+    {min, _} = Float.parse(String.slice(string, 2, 100))
     latitude_to_decimal_degrees(deg, min, bearing)
   end
 
@@ -72,16 +64,8 @@ defmodule BoatTracker.Sentences.Parser do
   defp parse_longitude("", ""), do: nil
 
   defp parse_longitude(string, bearing) do
-    {deg, _} =
-      string
-      |> String.slice(0, 3)
-      |> Float.parse()
-
-    {min, _} =
-      string
-      |> String.slice(3, 100)
-      |> Float.parse()
-
+    {deg, _} = Float.parse(String.slice(string, 0, 3))
+    {min, _} = Float.parse(String.slice(string, 3, 100))
     longitude_to_decimal_degrees(deg, min, bearing)
   end
 
@@ -97,22 +81,9 @@ defmodule BoatTracker.Sentences.Parser do
   end
 
   defp parse_date(<<raw_date::binary-size(@date_size)>>) do
-    {day, _} =
-      raw_date
-      |> String.slice(0, 2)
-      |> Integer.parse()
-
-    {month, _} =
-      raw_date
-      |> String.slice(2, 2)
-      |> Integer.parse()
-
-    {year, _} =
-      raw_date
-      |> String.slice(4, 2)
-      |> String.replace_prefix("", "20")
-      |> Integer.parse()
-
+    {day, _} = Integer.parse(String.slice(raw_date, 0, 2))
+    {month, _} = Integer.parse(String.slice(raw_date, 2, 2))
+    {year, _} = Integer.parse("20" <> String.slice(raw_date, 2, 2))
     {:ok, date} = Date.new(year, month, day)
 
     date
