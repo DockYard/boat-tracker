@@ -16,7 +16,8 @@ defmodule BoatTracker.Sentences.Parser do
         longitude: parse_longitude(Enum.at(content_list, 4), Enum.at(content_list, 5)),
         speed: parse_float(Enum.at(content_list, 6)),
         track_angle: parse_float(Enum.at(content_list, 7)),
-        date: parse_date(Enum.at(content_list, 8))
+        date: parse_date(Enum.at(content_list, 8)),
+        magnetic_variation: parse_float(Enum.at(content_list, 9))
       }
     end
   end
