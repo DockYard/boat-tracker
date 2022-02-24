@@ -42,5 +42,15 @@ defmodule BoatTrackerTest.Sentences.ParserTest do
                track_angle: 231.8
              }
     end
+
+    test "parse invalid sentences" do
+      sentence_1 = "$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130998,011.3"
+      sentence_2 = "GPRMC,220516,A,5133.82,N,00042.24,W,173.8,231.8,130694,004.2,W*70"
+      sentence_3 = "Do you even sail?"
+
+      refute Parser.parse(sentence_1)
+      refute Parser.parse(sentence_2)
+      refute Parser.parse(sentence_3)
+    end
   end
 end

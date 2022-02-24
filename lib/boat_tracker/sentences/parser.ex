@@ -22,6 +22,8 @@ defmodule BoatTracker.Sentences.Parser do
     end
   end
 
+  def parse(_invalid_sentence), do: nil
+
   defp valid_content_size?(:rmc, content), do: Enum.count(content) == @rmc_content_size
 
   defp parse_time(time) when byte_size(time) < @time_size, do: nil
