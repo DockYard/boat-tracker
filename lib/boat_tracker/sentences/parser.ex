@@ -1,10 +1,14 @@
 defmodule BoatTracker.Sentences.Parser do
+  @moduledoc """
+  NMEA sentences parser module.
+  """
   alias BoatTracker.Sentences.RMC
 
   @rmc_content_size 11
   @time_size 6
   @date_size 6
 
+  @spec parse(String.t()) :: RMC.t() | nil
   def parse("$GPRMC," <> content) do
     content_list = String.split(content, ",")
 
