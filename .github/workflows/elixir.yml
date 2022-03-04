@@ -25,8 +25,12 @@ jobs:
         path: deps
         key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
         restore-keys: ${{ runner.os }}-mix-
+    - name: Install Nerves requirements
+      run: sudo apt install build-essential automake autoconf git squashfs-tools ssh-askpass pkg-config curl
+    - name: Update hex and rebar
+      run: mix local.hex --force && mix local.rebar --force
     - name: Install dependencies
-      run: mix deps.get
+      run: mix archive.install hex nerves_bootstrap --force && mix deps.get
     - name: Compile Code
       run:  mix compile --warnings-as-errors
     - name: Run tests
