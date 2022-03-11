@@ -1,5 +1,6 @@
 defmodule BoatTrackerTest.Sentences.ParserTest do
   use ExUnit.Case
+  doctest BoatTracker.Sentences.Parser
 
   alias BoatTracker.Sentences.{Parser, RMC}
 

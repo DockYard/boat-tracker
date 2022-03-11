@@ -8,6 +8,23 @@ defmodule BoatTracker.Sentences.Parser do
   @time_size 6
   @date_size 6
 
+  @doc """
+  Parses a NMEA sentence into a struct.
+
+  ## Examples
+
+    iex> BoatTracker.Sentences.Parser.parse("$GPRMC,220516,A,5133.82,N,00042.24,W,173.8,231.8,130694,004.2,W*70")
+    %BoatTracker.Sentences.RMC{
+      date: ~D[2006-06-13],
+      latitude: 51.56366666666667,
+      longitude: -0.7040000000000001,
+      magnetic_variation: 4.2,
+      speed: 173.8,
+      status: "A",
+      time: ~T[22:05:16.000000],
+      track_angle: 231.8
+    }
+  """
   @spec parse(String.t()) :: RMC.t() | nil
   def parse("$GPRMC," <> content) do
     content_list = String.split(content, ",")
