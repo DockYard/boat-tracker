@@ -11,9 +11,7 @@ defmodule BoatTracker.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: BoatTracker.Supervisor]
-
-    # Children for all targets
-    children = [GPS | children(target())]
+    children = children(target())
 
     Supervisor.start_link(children, opts)
   end
@@ -32,6 +30,7 @@ defmodule BoatTracker.Application do
       # Children for all targets except host
       # Starts a worker by calling: BoatTracker.Worker.start_link(arg)
       # {BoatTracker.Worker, arg},
+      GPS
     ]
   end
 
