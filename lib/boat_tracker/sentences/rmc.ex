@@ -6,7 +6,7 @@ defmodule BoatTracker.Sentences.RMC do
             1      2     3   4     5    6  7   8    9     10 11 12
 
   1    = UTC of position fix
-  2    = Data status (V=navigation receiver warning)
+  2    = Data status (A = OK, V = Navigation receiver warning)
   3    = Latitude of fix
   4    = N or S
   5    = Longitude of fix
