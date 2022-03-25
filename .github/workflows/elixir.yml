@@ -31,7 +31,10 @@ jobs:
       run: mix local.hex --force && mix local.rebar --force
     - name: Install dependencies
       run: mix archive.install hex nerves_bootstrap --force && mix deps.get
+      working-directory: boat_tracker
     - name: Compile Code
       run:  mix compile --warnings-as-errors
+      working-directory: boat_tracker
     - name: Run tests
       run: mix test
+      working-directory: boat_tracker
