@@ -19,11 +19,13 @@ defmodule BoatTracker.GPS do
   end
 
   @impl true
-  def handle_info({:circuits_uart, _serial_port_id, data}, state) do
+  def handle_info({:circuits_uart, _serial_port_id, "$GPRMC" <> _sentence = data}, state) do
     Logger.info("coordinates: #{inspect(data)}")
 
     {:noreply, state}
   end
+
+  def handle_info({:circuits_uart, _serial_port_id, _data}, state), do: {:noreply, state}
 
   defp setup_UART do
     {:ok, pid} = Circuits.UART.start_link()
