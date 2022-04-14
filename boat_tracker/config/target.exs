@@ -58,7 +58,20 @@ config :vintage_net,
        type: VintageNetEthernet,
        ipv4: %{method: :dhcp}
      }},
-    {"wlan0", %{type: VintageNetWiFi}}
+    {"wlan0",
+     %{
+       type: VintageNetWiFi,
+       ipv4: %{method: :dhcp},
+       vintage_net_wifi: %{
+         networks: [
+           %{
+             key_mgmt: :wpa_psk,
+             ssid: System.get_env("BOAT_TRACKER_SSID"),
+             psk: System.get_env("BOAT_TRACKER_PSK")
+           }
+         ]
+       }
+     }}
   ]
 
 config :mdns_lite,
