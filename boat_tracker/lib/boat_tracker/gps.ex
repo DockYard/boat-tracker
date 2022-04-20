@@ -5,10 +5,11 @@ defmodule BoatTracker.GPS do
   def start_link(state), do: GenServer.start_link(__MODULE__, state)
 
   @impl true
-  def init(state) do
-    setup_UART()
+  def init(_) do
+    {:ok, uart_pid} = setup_UART()
+    {:ok, spi_ref} = setup_SPI()
 
-    {:ok, state}
+    {:ok, {uart_pid, spi_ref}}
   end
 
   @impl true
@@ -19,8 +20,13 @@ defmodule BoatTracker.GPS do
   end
 
   @impl true
-  def handle_info({:circuits_uart, _serial_port_id, "$GPRMC" <> _sentence = data}, state) do
+  def handle_info({:circuits_uart, _, "$GPRMC" <> _sentence = data}, {_, ref} = state) do
     Logger.info("coordinates: #{inspect(data)}")
+
+    case Circuits.SPI.transfer(ref, data) do
+      {:ok, sent_data} -> Logger.info("sending: #{inspect(sent_data)}")
+      {:error, reason} -> Logger.info("sending error: #{inspect(reason)}")
+    end
 
     {:noreply, state}
   end
@@ -36,5 +42,9 @@ defmodule BoatTracker.GPS do
         active: true,
         framing: {Circuits.UART.Framing.Line, separator: "\r\n"}
       )
+
+    {:ok, pid}
   end
+
+  defp setup_SPI, do: Circuits.SPI.open("spidev0.0", speed_hz: 300_000)
 end
