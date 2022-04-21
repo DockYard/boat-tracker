@@ -4,6 +4,7 @@ defmodule BoatUplink.Application do
   @moduledoc false
 
   use Application
+  alias BoatUplink.Receiver
 
   @impl true
   def start(_type, _args) do
@@ -11,12 +12,7 @@ defmodule BoatUplink.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: BoatUplink.Supervisor]
 
-    children =
-      [
-        # Children for all targets
-        # Starts a worker by calling: BoatUplink.Worker.start_link(arg)
-        # {BoatUplink.Worker, arg},
-      ] ++ children(target())
+    children = children(target())
 
     Supervisor.start_link(children, opts)
   end
@@ -35,10 +31,9 @@ defmodule BoatUplink.Application do
       # Children for all targets except host
       # Starts a worker by calling: BoatUplink.Worker.start_link(arg)
       # {BoatUplink.Worker, arg},
+      Receiver
     ]
   end
 
-  def target() do
-    Application.get_env(:boat_uplink, :target)
-  end
+  def target, do: Application.get_env(:boat_uplink, :target)
 end
