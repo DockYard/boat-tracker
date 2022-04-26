@@ -1,4 +1,4 @@
-defmodule BoatTracker.GPS do
+defmodule BoatTracker.Transmitter do
   use GenServer
   require Logger
   alias Circuits.UART.Framing.Line
