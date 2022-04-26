@@ -36,7 +36,6 @@ defmodule BoatTracker.MixProject do
       {:ring_logger, "~> 0.8.1"},
       {:toolshed, "~> 0.2.13"},
       {:circuits_uart, "~> 1.3"},
-      {:circuits_spi, "~> 1.3"},
       {:lora, "~> 1.0"},
       {:git_hooks, "~> 0.7.0", only: [:dev], runtime: false},
 
