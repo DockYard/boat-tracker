@@ -3,7 +3,7 @@ defmodule BoatTracker.Transmitter do
   require Logger
   alias Circuits.UART.Framing.Line
 
-  def start_link(state), do: GenServer.start_link(__MODULE__, state)
+  def start_link(state), do: GenServer.start_link(__MODULE__, state, name: __MODULE__)
 
   @impl true
   def init(_) do
