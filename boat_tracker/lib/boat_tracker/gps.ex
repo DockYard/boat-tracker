@@ -1,15 +1,16 @@
 defmodule BoatTracker.GPS do
   use GenServer
   require Logger
+  alias Circuits.UART.Framing.Line
 
   def start_link(state), do: GenServer.start_link(__MODULE__, state)
 
   @impl true
   def init(_) do
-    {:ok, uart_pid} = setup_UART()
-    {:ok, spi_ref} = setup_SPI()
+    uart_pid = setup_UART()
+    lora_pid = setup_LoRa()
 
-    {:ok, {uart_pid, spi_ref}}
+    {:ok, {uart_pid, lora_pid}}
   end
 
   @impl true
@@ -20,13 +21,9 @@ defmodule BoatTracker.GPS do
   end
 
   @impl true
-  def handle_info({:circuits_uart, _, "$GPRMC" <> _sentence = data}, {_, ref} = state) do
-    Logger.info("coordinates: #{inspect(data)}")
-
-    case Circuits.SPI.transfer(ref, data) do
-      {:ok, sent_data} -> Logger.info("sending: #{inspect(sent_data)}")
-      {:error, reason} -> Logger.info("sending error: #{inspect(reason)}")
-    end
+  def handle_info({:circuits_uart, _, "$GPRMC" <> _sentence = data}, {_, lora_pid} = state) do
+    Logger.info("sending: #{inspect(data)}")
+    LoRa.send(lora_pid, data)
 
     {:noreply, state}
   end
@@ -40,11 +37,18 @@ defmodule BoatTracker.GPS do
       Circuits.UART.open(pid, "ttyAMA0",
         speed: 9600,
         active: true,
-        framing: {Circuits.UART.Framing.Line, separator: "\r\n"}
+        framing: {Line, separator: "\r\n"}
       )
 
-    {:ok, pid}
+    pid
   end
 
-  defp setup_SPI, do: Circuits.SPI.open("spidev0.0", speed_hz: 300_000)
+  defp setup_LoRa do
+    {:ok, pid} = LoRa.start_link()
+    :ok = LoRa.begin(pid, 433.0e6)
+    :ok = LoRa.set_spreading_factor(pid, 8)
+    :ok = LoRa.set_signal_bandwidth(pid, 62.5e3)
+
+    pid
+  end
 end
