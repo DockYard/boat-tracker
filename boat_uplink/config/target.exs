@@ -92,6 +92,12 @@ config :mdns_lite,
     }
   ]
 
+config :boat_uplink,
+  lora_frequency:
+    "LORA_FREQUENCY"
+    |> System.get_env("915.0e6")
+    |> String.to_float()
+
 # Import target specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 # Uncomment to use target specific configurations

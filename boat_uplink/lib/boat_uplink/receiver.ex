@@ -22,7 +22,7 @@ defmodule BoatUplink.Receiver do
   end
 
   defp setup_LoRa do
-    frequency = get_frequency()
+    frequency = Application.get_env(:boat_uplink, :lora_frequency)
 
     {:ok, pid} = LoRa.start_link()
     :ok = LoRa.begin(pid, frequency)
@@ -30,11 +30,5 @@ defmodule BoatUplink.Receiver do
     :ok = LoRa.set_signal_bandwidth(pid, 62.5e3)
 
     pid
-  end
-
-  defp get_frequency do
-    "LORA_FREQUENCY"
-    |> System.get_env("915.0e6")
-    |> String.to_float()
   end
 end
