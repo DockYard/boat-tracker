@@ -44,7 +44,8 @@ defmodule BoatTracker.Transmitter do
   end
 
   defp setup_LoRa do
-    frequency = Application.get_env(:boat_uplink, :lora_frequency)
+    frequency = Application.get_env(:boat_tracker, :lora_frequency)
+    Logger.info("LoRa: setting frequency to #{inspect(frequency)} Hz")
 
     {:ok, pid} = LoRa.start_link()
     :ok = LoRa.begin(pid, frequency)

@@ -103,7 +103,7 @@ config :mdns_lite,
     }
   ]
 
-config :boat_uplink,
+config :boat_tracker,
   lora_frequency:
     "LORA_FREQUENCY"
     |> System.get_env("915.0e6")
