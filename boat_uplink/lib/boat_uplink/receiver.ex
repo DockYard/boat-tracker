@@ -24,10 +24,10 @@ defmodule BoatUplink.Receiver do
   defp setup_LoRa do
     frequency = Application.get_env(:boat_uplink, :lora_frequency)
 
-    {:ok, pid} = LoRa.start_link()
-    :ok = LoRa.begin(pid, frequency)
-    :ok = LoRa.set_spreading_factor(pid, 8)
-    :ok = LoRa.set_signal_bandwidth(pid, 62.5e3)
+    {:ok, pid} = LoRa.start_link(encoding: :binary)
+    LoRa.begin(pid, frequency)
+    LoRa.set_spreading_factor(pid, 10)
+    LoRa.set_signal_bandwidth(pid, 125.0e3)
 
     pid
   end
