@@ -35,7 +35,7 @@ defmodule BoatUplink.MixProject do
       {:shoehorn, "~> 0.8.0"},
       {:ring_logger, "~> 0.8.3"},
       {:toolshed, "~> 0.2.13"},
-      {:lora, "~> 1.0"},
+      {:lora, git: "https://github.com/schrockwell/Elixir-LoRa", branch: "add-encoding"},
 
       # Dependencies for all targets except :host
       {:nerves_runtime, "~> 0.11.6", targets: @all_targets},
