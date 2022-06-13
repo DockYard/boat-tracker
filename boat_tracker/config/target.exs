@@ -58,7 +58,20 @@ config :vintage_net,
        type: VintageNetEthernet,
        ipv4: %{method: :dhcp}
      }},
-    {"wlan0", %{type: VintageNetWiFi}}
+    {"wlan0",
+     %{
+       type: VintageNetWiFi,
+       ipv4: %{method: :dhcp},
+       vintage_net_wifi: %{
+         networks: [
+           %{
+             key_mgmt: :wpa_psk,
+             ssid: System.get_env("BOAT_TRACKER_SSID"),
+             psk: System.get_env("BOAT_TRACKER_PSK")
+           }
+         ]
+       }
+     }}
   ]
 
 config :mdns_lite,
@@ -89,6 +102,12 @@ config :mdns_lite,
       port: 4369
     }
   ]
+
+config :boat_tracker,
+  lora_frequency:
+    "LORA_FREQUENCY"
+    |> System.get_env("915.0e6")
+    |> String.to_float()
 
 # Import target specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

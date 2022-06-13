@@ -4,7 +4,7 @@ defmodule BoatTracker.Application do
   @moduledoc false
 
   use Application
-  alias BoatTracker.GPS
+  alias BoatTracker.Transmitter
 
   @impl true
   def start(_type, _args) do
@@ -30,7 +30,7 @@ defmodule BoatTracker.Application do
       # Children for all targets except host
       # Starts a worker by calling: BoatTracker.Worker.start_link(arg)
       # {BoatTracker.Worker, arg},
-      GPS
+      Transmitter
     ]
   end
 
