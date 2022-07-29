@@ -3,7 +3,7 @@ defmodule BoatVisualizerWeb.MapLive do
 
   def render(assigns) do
     ~H"""
-    <div id="map" phx-update="ignore" ></div>
+    <div id="map" phx-update="ignore"></div>
     """
   end
 end
