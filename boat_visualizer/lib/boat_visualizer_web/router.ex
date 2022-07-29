@@ -17,7 +17,8 @@ defmodule BoatVisualizerWeb.Router do
   scope "/", BoatVisualizerWeb do
     pipe_through :browser
 
-    get "/", PageController, :index
+    get "/page", PageController, :index
+    live "/", MapLive
   end
 
   # Other scopes may use custom stacks.
