@@ -14,9 +14,6 @@ defmodule BoatVisualizerWeb.MapLive do
     """
   end
 
-  def handle_info({_latitude, _longitude}, socket) do
-    # send coordinates to leaflet map
-
-    {:noreply, socket}
-  end
+  def handle_info({latitude, longitude}, socket),
+    do: {:noreply, push_event(socket, "coordinates", %{latitude: latitude, longitude: longitude})}
 end
