@@ -37,7 +37,6 @@ defmodule BoatTracker.MixProject do
       {:toolshed, "~> 0.2.13"},
       {:circuits_uart, "~> 1.3"},
       {:lora, git: "https://github.com/schrockwell/Elixir-LoRa", branch: "add-encoding"},
-      {:git_hooks, "~> 0.7.0", only: [:dev], runtime: false},
 
       # Dependencies for all targets except :host
       {:nerves_runtime, "~> 0.11.3", targets: @all_targets},

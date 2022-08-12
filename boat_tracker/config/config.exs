@@ -26,26 +26,6 @@ config :nerves, source_date_epoch: "1643737654"
 
 config :logger, backends: [RingLogger]
 
-# Git hooks
-if Mix.env() == :dev do
-  config :git_hooks,
-    auto_install: true,
-    verbose: true,
-    hooks: [
-      pre_commit: [
-        tasks: [
-          {:cmd, "mix format --check-formatted"}
-        ]
-      ],
-      pre_push: [
-        verbose: false,
-        tasks: [
-          {:cmd, "mix test --color"}
-        ]
-      ]
-    ]
-end
-
 if Mix.target() == :host or Mix.target() == :"" do
   import_config "host.exs"
 else
