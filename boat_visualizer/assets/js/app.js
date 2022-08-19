@@ -28,14 +28,14 @@ import topbar from "../vendor/topbar";
 import Leaflet from "leaflet";
 
 // Setup Leaflet for rendering maps
-var map = Leaflet.map("map").setView([42.364506, -71.038887], 13);
+var map = Leaflet.map("map").setView([42.27, -70.997], 13);
 
 Leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
   attribution: "© OpenStreetMap",
 }).addTo(map);
 
-var marker = L.marker([42.364506, -71.038887]).addTo(map);
+var marker = L.marker([42.27, -70.997]).addTo(map);
 marker.bindPopup("Boat Node");
 
 window.addEventListener(`phx:coordinates`, (e) => {
