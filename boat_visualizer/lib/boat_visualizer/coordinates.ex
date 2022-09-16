@@ -11,23 +11,23 @@ defmodule BoatVisualizer.Coordinates do
       &(&1
         |> String.split(",")
         |> List.to_tuple()
-        |> then(fn {time, longitude, latitude} ->
-          {NaiveDateTime.from_iso8601!(time), String.to_float(longitude),
-           String.to_float(latitude)}
+        |> then(fn {time, latitude, longitude} ->
+          {NaiveDateTime.from_iso8601!(time), String.to_float(latitude),
+           String.to_float(longitude)}
         end))
     )
   end
 
   def get_center(coordinates) do
-    longitudes = Enum.map(coordinates, fn {_, longitude, _} -> longitude end)
-    latitudes = Enum.map(coordinates, fn {_, _, latitude} -> latitude end)
-
-    min_longitude = Enum.min(longitudes)
-    max_longitude = Enum.max(longitudes)
+    latitudes = Enum.map(coordinates, fn {_, latitude, _} -> latitude end)
+    longitudes = Enum.map(coordinates, fn {_, _, longitudes} -> longitudes end)
 
     min_latitude = Enum.min(latitudes)
     max_latitude = Enum.max(latitudes)
 
-    {(min_longitude + max_longitude) / 2, (min_latitude + max_latitude) / 2}
+    min_longitude = Enum.min(longitudes)
+    max_longitude = Enum.max(longitudes)
+
+    {(min_latitude + max_latitude) / 2, (min_longitude + max_longitude) / 2}
   end
 end
