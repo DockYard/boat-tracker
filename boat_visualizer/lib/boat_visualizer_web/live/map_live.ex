@@ -1,11 +1,18 @@
 defmodule BoatVisualizerWeb.MapLive do
   use Phoenix.LiveView
   alias Phoenix.PubSub
+  alias BoatVisualizer.Coordinates
 
   def mount(_params, _session, socket) do
     if connected?(socket), do: PubSub.subscribe(BoatVisualizer.PubSub, "markers")
+    [initial_coordinates | _] = coordinates = Coordinates.get_coordinates("trip-01.csv")
+    map_center = Coordinates.get_center(coordinates)
 
-    {:ok, socket}
+    {:ok,
+     socket
+     |> assign(:current_coordinates, initial_coordinates)
+     |> assign(:coordinates, coordinates)
+     |> assign(:map_center, map_center)}
   end
 
   def render(assigns) do
