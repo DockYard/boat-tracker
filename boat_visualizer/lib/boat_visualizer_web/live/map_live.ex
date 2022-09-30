@@ -1,12 +1,15 @@
 defmodule BoatVisualizerWeb.MapLive do
   use Phoenix.LiveView
+
   alias Phoenix.PubSub
   alias BoatVisualizer.Coordinates
+  alias BoatVisualizer.Animation
 
   def mount(_params, _session, socket) do
-    if connected?(socket), do: PubSub.subscribe(BoatVisualizer.PubSub, "markers")
+    if connected?(socket), do: PubSub.subscribe(BoatVisualizer.PubSub, "leaflet")
     [initial_coordinates | _] = coordinates = Coordinates.get_coordinates("trip-01.csv")
     map_center = Coordinates.get_center(coordinates)
+    Animation.set_map_view(map_center)
 
     {:ok,
      socket
@@ -21,6 +24,10 @@ defmodule BoatVisualizerWeb.MapLive do
     """
   end
 
-  def handle_info({latitude, longitude}, socket),
+  def handle_info({"set_map_view", latitude, longitude}, socket),
+    do:
+      {:noreply, push_event(socket, "set_map_view", %{latitude: latitude, longitude: longitude})}
+
+  def handle_info({"set_marker_coordinates", latitude, longitude}, socket),
     do: {:noreply, push_event(socket, "coordinates", %{latitude: latitude, longitude: longitude})}
 end
