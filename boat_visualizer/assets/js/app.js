@@ -38,11 +38,11 @@ Leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 var marker = L.marker([42.27, -70.997]).addTo(map);
 marker.bindPopup("Boat Node");
 
-window.addEventListener(`phx:coordinates`, (e) => {
+window.addEventListener(`phx:marker_coordinates`, (e) => {
   marker.setLatLng({ lat: e.detail.latitude, lng: e.detail.longitude });
 });
 
-window.addEventListener(`phx:set_map_view`, (e) => {
+window.addEventListener(`phx:map_view`, (e) => {
   map.setView([e.detail.latitude, e.detail.longitude], 13);
 });
 
