@@ -15,11 +15,22 @@ defmodule BoatVisualizer.Animation do
     do: send(self(), {"marker_coordinates", latitude, longitude})
 
   def broadcast_marker_coordinates({_time, latitude, longitude}),
-    do: PubSub.broadcast(BoatVisualizer.PubSub, "leaflet", {"marker_coordinates", latitude, longitude})
+    do:
+      PubSub.broadcast(
+        BoatVisualizer.PubSub,
+        "leaflet",
+        {"marker_coordinates", latitude, longitude}
+      )
 
   def diagonal({lat, lng} \\ @initial_coordinates) do
     updated_coordinates = {lat + @step_increment, lng + @step_increment}
-    PubSub.broadcast(BoatVisualizer.PubSub, "leaflet", {"marker_coordinates", lat + @step_increment, lng + @step_increment})
+
+    PubSub.broadcast(
+      BoatVisualizer.PubSub,
+      "leaflet",
+      {"marker_coordinates", lat + @step_increment, lng + @step_increment}
+    )
+
     Process.sleep(@timeout)
 
     diagonal(updated_coordinates)

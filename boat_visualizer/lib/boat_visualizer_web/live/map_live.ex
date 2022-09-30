@@ -18,27 +18,35 @@ defmodule BoatVisualizerWeb.MapLive do
      |> assign(:current_coordinates, initial_coordinates)
      |> assign(:coordinates, coordinates)
      |> assign(:map_center, map_center)
-     |> assign(:max_position, Enum.count(coordinates) - 1)
-     }
+     |> assign(:current_position, 0)
+     |> assign(:max_position, Enum.count(coordinates) - 1)}
   end
 
   def render(assigns) do
     ~H"""
     <div id="map" phx-update="ignore"></div>
     <form phx-change="set_position">
-      <input type="range" id="position" name="position" value="0" min="0" max={@max_position}>
+      <label for="position"><%= print_coordinates(@current_coordinates) %></label>
+      <input type="range" id="position" name="position" value={@current_position} min="0" max={@max_position}>
     </form>
     """
   end
 
   def handle_event("set_position", %{"position" => new_position}, %{assigns: assigns} = socket) do
-    new_coordinates =  Enum.at(assigns.coordinates, String.to_integer(new_position))
+    new_coordinates = Enum.at(assigns.coordinates, String.to_integer(new_position))
     Animation.set_marker_coordinates(new_coordinates)
 
-    {:noreply, assign(socket, :current_coordinates, new_coordinates)}
+    {:noreply,
+     socket
+     |> assign(:current_position, new_position)
+     |> assign(:current_coordinates, new_coordinates)}
   end
 
   def handle_info({event, latitude, longitude}, socket) do
     {:noreply, push_event(socket, event, %{latitude: latitude, longitude: longitude})}
   end
+
+  defp print_coordinates({datetime, latitude, longitude}),
+    do:
+      "#{NaiveDateTime.to_string(datetime)} [#{Float.round(latitude, 4)}, #{Float.round(longitude, 4)}]"
 end
