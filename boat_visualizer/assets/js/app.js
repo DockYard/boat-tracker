@@ -53,6 +53,11 @@ window.addEventListener(`phx:map_view`, (e) => {
   map.setView([e.detail.latitude, e.detail.longitude], 13);
 });
 
+window.addEventListener(`phx:clear_polyline`, (_e) => {
+  coordinates = [];
+  polyline.setLatLngs(coordinates);
+});
+
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");

@@ -29,6 +29,7 @@ defmodule BoatVisualizerWeb.MapLive do
       <label for="position"><%= print_coordinates(@current_coordinates) %></label>
       <input type="range" id="position" name="position" value={@current_position} min="0" max={@max_position}>
     </form>
+    <button phx-click="clear">Clear</button>
     """
   end
 
@@ -41,6 +42,8 @@ defmodule BoatVisualizerWeb.MapLive do
      |> assign(:current_position, new_position)
      |> assign(:current_coordinates, new_coordinates)}
   end
+
+  def handle_event("clear", _, socket), do: {:noreply, push_event(socket, "clear_polyline", %{})}
 
   def handle_info({event, latitude, longitude}, socket) do
     {:noreply, push_event(socket, event, %{latitude: latitude, longitude: longitude})}
