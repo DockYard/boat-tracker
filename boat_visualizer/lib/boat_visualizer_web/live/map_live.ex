@@ -24,12 +24,14 @@ defmodule BoatVisualizerWeb.MapLive do
 
   def render(assigns) do
     ~H"""
-    <div id="map" phx-update="ignore"></div>
-    <form phx-change="set_position">
-      <label for="position"><%= print_coordinates(@current_coordinates) %></label>
-      <input type="range" id="position" name="position" value={@current_position} min="0" max={@max_position}>
-    </form>
-    <button phx-click="clear">Clear</button>
+    <div class="container">
+      <div id="map" phx-update="ignore"></div>
+      <form phx-change="set_position">
+        <label for="position"><%= print_coordinates(@current_coordinates) %></label>
+        <input style="width:100%" type="range" id="position" name="position" value={@current_position} min="0" max={@max_position}>
+      </form>
+      <button phx-click="clear">Clear</button>
+    </div>
     """
   end
 
