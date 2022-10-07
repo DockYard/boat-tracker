@@ -28,7 +28,7 @@ import topbar from "../vendor/topbar";
 import Leaflet from "leaflet";
 
 // Setup Leaflet for rendering maps
-var map = Leaflet.map("map").setView([42.27, -70.997], 13);
+var map = Leaflet.map("map").setView([42.27, -70.997], 14);
 var polyline = Leaflet.polyline([], { color: "red" }).addTo(map);
 let coordinates = [];
 
@@ -50,7 +50,7 @@ window.addEventListener(`phx:marker_coordinates`, (e) => {
 });
 
 window.addEventListener(`phx:map_view`, (e) => {
-  map.setView([e.detail.latitude, e.detail.longitude], 13);
+  map.setView([e.detail.latitude, e.detail.longitude], 14);
 });
 
 window.addEventListener(`phx:clear_polyline`, (_e) => {
