@@ -29,6 +29,8 @@ import Leaflet from "leaflet";
 
 // Setup Leaflet for rendering maps
 var map = Leaflet.map("map").setView([42.27, -70.997], 13);
+var polyline = Leaflet.polyline([], { color: "red" }).addTo(map);
+let coordinates = [];
 
 Leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -39,7 +41,12 @@ var marker = L.marker([42.27, -70.997]).addTo(map);
 marker.bindPopup("Boat Node");
 
 window.addEventListener(`phx:marker_coordinates`, (e) => {
-  marker.setLatLng({ lat: e.detail.latitude, lng: e.detail.longitude });
+  const latitude = e.detail.latitude;
+  const longitude = e.detail.longitude;
+
+  coordinates.push([latitude, longitude]);
+  marker.setLatLng({ lat: latitude, lng: longitude });
+  polyline.setLatLngs(coordinates);
 });
 
 window.addEventListener(`phx:map_view`, (e) => {
