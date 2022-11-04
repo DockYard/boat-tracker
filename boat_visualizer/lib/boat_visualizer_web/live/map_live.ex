@@ -23,20 +23,6 @@ defmodule BoatVisualizerWeb.MapLive do
      |> assign(:show_track, true)}
   end
 
-  def render(assigns) do
-    ~H"""
-    <div class="container">
-      <div id="map" phx-update="ignore"></div><br>
-        <form phx-change="set_position">
-          <label for="position"><%= print_coordinates(@current_coordinates) %></label>
-          <input style="width:100%" type="range" id="position" name="position" value={@current_position} min="0" max={@max_position}>
-        </form>
-      <button phx-click="toggle_track"><%= if @show_track, do: "Hide", else: "Show" %></button>
-      <button phx-click="clear" :if={@show_track}>Clear</button>
-    </div>
-    """
-  end
-
   def handle_event("set_position", %{"position" => new_position}, %{assigns: assigns} = socket) do
     new_coordinates = Enum.at(assigns.coordinates, String.to_integer(new_position))
     Animation.set_marker_coordinates(new_coordinates)
