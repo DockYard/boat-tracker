@@ -31,8 +31,8 @@ defmodule BoatVisualizerWeb.MapLive do
           <label for="position"><%= print_coordinates(@current_coordinates) %></label>
           <input style="width:100%" type="range" id="position" name="position" value={@current_position} min="0" max={@max_position}>
         </form>
-      <button phx-click="clear" :if={@show_track}>Clear</button>
       <button phx-click="toggle_track"><%= if @show_track, do: "Hide", else: "Show" %></button>
+      <button phx-click="clear" :if={@show_track}>Clear</button>
     </div>
     """
   end
