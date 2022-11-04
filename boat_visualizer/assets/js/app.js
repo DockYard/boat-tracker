@@ -41,8 +41,9 @@ var marker = L.marker([42.27, -70.997]).addTo(map);
 marker.bindPopup("Boat Node");
 
 window.addEventListener(`phx:marker_coordinates`, (e) => {
-  const latitude = e.detail.latitude;
-  const longitude = e.detail.longitude;
+  const {
+    detail: { latitude, longitude },
+  } = e;
 
   coordinates.push([latitude, longitude]);
   marker.setLatLng({ lat: latitude, lng: longitude });
