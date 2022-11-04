@@ -28,7 +28,9 @@ import topbar from "../vendor/topbar";
 import Leaflet from "leaflet";
 
 // Setup Leaflet for rendering maps
-var map = Leaflet.map("map").setView([42.27, -70.997], 13);
+var map = Leaflet.map("map").setView([42.27, -70.997], 14);
+var polyline = Leaflet.polyline([], { color: "red" }).addTo(map);
+let coordinates = [];
 
 Leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -38,9 +40,22 @@ Leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 var marker = L.marker([42.27, -70.997]).addTo(map);
 marker.bindPopup("Boat Node");
 
-window.addEventListener(`phx:coordinates`, (e) => {
-  console.log(e.detail);
-  marker.setLatLng({ lat: e.detail.latitude, lng: e.detail.longitude });
+window.addEventListener(`phx:marker_coordinates`, (e) => {
+  const latitude = e.detail.latitude;
+  const longitude = e.detail.longitude;
+
+  coordinates.push([latitude, longitude]);
+  marker.setLatLng({ lat: latitude, lng: longitude });
+  polyline.setLatLngs(coordinates);
+});
+
+window.addEventListener(`phx:map_view`, (e) => {
+  map.setView([e.detail.latitude, e.detail.longitude], 14);
+});
+
+window.addEventListener(`phx:clear_polyline`, (_e) => {
+  coordinates = [];
+  polyline.setLatLngs(coordinates);
 });
 
 let csrfToken = document
