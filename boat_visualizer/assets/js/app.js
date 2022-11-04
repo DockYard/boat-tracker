@@ -41,8 +41,9 @@ var marker = L.marker([42.27, -70.997]).addTo(map);
 marker.bindPopup("Boat Node");
 
 window.addEventListener(`phx:marker_coordinates`, (e) => {
-  const latitude = e.detail.latitude;
-  const longitude = e.detail.longitude;
+  const {
+    detail: { latitude, longitude },
+  } = e;
 
   coordinates.push([latitude, longitude]);
   marker.setLatLng({ lat: latitude, lng: longitude });
@@ -56,6 +57,14 @@ window.addEventListener(`phx:map_view`, (e) => {
 window.addEventListener(`phx:clear_polyline`, (_e) => {
   coordinates = [];
   polyline.setLatLngs(coordinates);
+});
+
+window.addEventListener(`phx:toggle_track`, (e) => {
+  if (e.detail.value) {
+    polyline.addTo(map);
+  } else {
+    polyline.remove();
+  }
 });
 
 let csrfToken = document
