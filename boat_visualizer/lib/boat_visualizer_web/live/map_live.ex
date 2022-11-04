@@ -19,18 +19,20 @@ defmodule BoatVisualizerWeb.MapLive do
      |> assign(:coordinates, coordinates)
      |> assign(:map_center, map_center)
      |> assign(:current_position, 0)
-     |> assign(:max_position, Enum.count(coordinates) - 1)}
+     |> assign(:max_position, Enum.count(coordinates) - 1)
+     |> assign(:show_track, true)}
   end
 
   def render(assigns) do
     ~H"""
     <div class="container">
-      <div id="map" phx-update="ignore"></div>
-      <form phx-change="set_position">
-        <label for="position"><%= print_coordinates(@current_coordinates) %></label>
-        <input style="width:100%" type="range" id="position" name="position" value={@current_position} min="0" max={@max_position}>
-      </form>
-      <button phx-click="clear">Clear</button>
+      <div id="map" phx-update="ignore"></div><br>
+        <form phx-change="set_position">
+          <label for="position"><%= print_coordinates(@current_coordinates) %></label>
+          <input style="width:100%" type="range" id="position" name="position" value={@current_position} min="0" max={@max_position}>
+        </form>
+      <button phx-click="clear" :if={@show_track}>Clear</button>
+      <button phx-click="toggle_track"><%= if @show_track, do: "Hide", else: "Show" %></button>
     </div>
     """
   end
@@ -46,6 +48,13 @@ defmodule BoatVisualizerWeb.MapLive do
   end
 
   def handle_event("clear", _, socket), do: {:noreply, push_event(socket, "clear_polyline", %{})}
+
+  def handle_event("toggle_track", _, %{assigns: %{show_track: value}} = socket) do
+    {:noreply,
+     socket
+     |> assign(:show_track, !value)
+     |> push_event("toggle_track", %{value: !value})}
+  end
 
   def handle_info({event, latitude, longitude}, socket) do
     {:noreply, push_event(socket, event, %{latitude: latitude, longitude: longitude})}

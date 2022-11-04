@@ -58,6 +58,14 @@ window.addEventListener(`phx:clear_polyline`, (_e) => {
   polyline.setLatLngs(coordinates);
 });
 
+window.addEventListener(`phx:toggle_track`, (e) => {
+  if (e.detail.value) {
+    polyline.addTo(map);
+  } else {
+    polyline.remove();
+  }
+});
+
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
