@@ -11,16 +11,26 @@ defmodule BoatVisualizer.Animation do
   def broadcast_map_view({latitude, longitude}),
     do: PubSub.broadcast(BoatVisualizer.PubSub, "leaflet", {"map_view", latitude, longitude})
 
-  def set_marker_coordinates({_time, latitude, longitude}),
+  def set_marker_coordinates({_date, latitude, longitude}),
     do: send(self(), {"marker_coordinates", latitude, longitude})
 
-  def broadcast_marker_coordinates({_time, latitude, longitude}),
+  def set_marker_position(position),
+    do: send(self(), {"marker_position", position})
+
+  def broadcast_marker_coordinates({_date, latitude, longitude}),
     do:
       PubSub.broadcast(
         BoatVisualizer.PubSub,
         "leaflet",
         {"marker_coordinates", latitude, longitude}
       )
+
+  def set_track_coordinates(coordinates) do
+    dateless_coordinates =
+      Enum.map(coordinates, fn {_date, latitude, longitude} -> [latitude, longitude] end)
+
+    send(self(), {"track_coordinates", dateless_coordinates})
+  end
 
   def diagonal({lat, lng} \\ @initial_coordinates) do
     updated_coordinates = {lat + @step_increment, lng + @step_increment}

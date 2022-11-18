@@ -10,6 +10,7 @@ defmodule BoatVisualizerWeb.MapLive do
     [initial_coordinates | _] = coordinates = Coordinates.get_coordinates("trip-01.csv")
     map_center = Coordinates.get_center(coordinates)
 
+    Animation.set_track_coordinates(coordinates)
     Animation.set_map_view(map_center)
     Animation.set_marker_coordinates(initial_coordinates)
 
@@ -23,9 +24,10 @@ defmodule BoatVisualizerWeb.MapLive do
      |> assign(:show_track, true)}
   end
 
-  def handle_event("set_position", %{"position" => new_position}, %{assigns: assigns} = socket) do
-    new_coordinates = Enum.at(assigns.coordinates, String.to_integer(new_position))
-    Animation.set_marker_coordinates(new_coordinates)
+  def handle_event("set_position", %{"position" => position}, %{assigns: assigns} = socket) do
+    new_position = String.to_integer(position)
+    new_coordinates = Enum.at(assigns.coordinates, new_position)
+    Animation.set_marker_position(new_position)
 
     {:noreply,
      socket
@@ -40,6 +42,14 @@ defmodule BoatVisualizerWeb.MapLive do
      socket
      |> assign(:show_track, !value)
      |> push_event("toggle_track", %{value: !value})}
+  end
+
+  def handle_info({"track_coordinates", coordinates}, socket) do
+    {:noreply, push_event(socket, "track_coordinates", %{coordinates: coordinates})}
+  end
+
+  def handle_info({"marker_position", position}, socket) do
+    {:noreply, push_event(socket, "marker_position", %{position: position})}
   end
 
   def handle_info({event, latitude, longitude}, socket) do
