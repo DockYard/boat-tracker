@@ -30,7 +30,7 @@ import Leaflet from "leaflet";
 // Setup Leaflet for rendering maps
 var map = Leaflet.map("map").setView([42.27, -70.997], 14);
 var polyline = Leaflet.polyline([], { color: "red" }).addTo(map);
-let coordinates = [];
+let trackCoordinates = [];
 
 Leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -40,14 +40,26 @@ Leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 var marker = L.marker([42.27, -70.997]).addTo(map);
 marker.bindPopup("Boat Node");
 
+window.addEventListener(`phx:track_coordinates`, (e) => {
+  const { detail: { coordinates } } = e;
+
+  trackCoordinates = coordinates;
+});
+
 window.addEventListener(`phx:marker_coordinates`, (e) => {
   const {
     detail: { latitude, longitude },
   } = e;
 
-  coordinates.push([latitude, longitude]);
   marker.setLatLng({ lat: latitude, lng: longitude });
-  polyline.setLatLngs(coordinates);
+});
+
+window.addEventListener(`phx:marker_position`, (e) => {
+  const { detail: { position } } = e;
+
+  const [latitude, longitude] = trackCoordinates[position];
+  marker.setLatLng({ lat: latitude, lng: longitude });
+  polyline.setLatLngs(trackCoordinates.slice(0, position));
 });
 
 window.addEventListener(`phx:map_view`, (e) => {
@@ -55,8 +67,7 @@ window.addEventListener(`phx:map_view`, (e) => {
 });
 
 window.addEventListener(`phx:clear_polyline`, (_e) => {
-  coordinates = [];
-  polyline.setLatLngs(coordinates);
+  polyline.setLatLngs([]);
 });
 
 window.addEventListener(`phx:toggle_track`, (e) => {
