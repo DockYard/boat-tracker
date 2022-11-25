@@ -25,63 +25,21 @@ import "phoenix_html";
 import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
-import Leaflet from "leaflet";
+import { interactiveMap } from "./leaflet"
 
-// Setup Leaflet for rendering maps
-var map = Leaflet.map("map").setView([42.27, -70.997], 14);
-var polyline = Leaflet.polyline([], { color: "red" }).addTo(map);
-let trackCoordinates = [];
+let Hooks = {};
 
-Leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 19,
-  attribution: "© OpenStreetMap",
-}).addTo(map);
-
-var marker = L.marker([42.27, -70.997]).addTo(map);
-marker.bindPopup("Boat Node");
-
-window.addEventListener(`phx:track_coordinates`, (e) => {
-  const { detail: { coordinates } } = e;
-
-  trackCoordinates = coordinates;
-});
-
-window.addEventListener(`phx:marker_coordinates`, (e) => {
-  const {
-    detail: { latitude, longitude },
-  } = e;
-
-  marker.setLatLng({ lat: latitude, lng: longitude });
-});
-
-window.addEventListener(`phx:marker_position`, (e) => {
-  const { detail: { position } } = e;
-
-  const [latitude, longitude] = trackCoordinates[position];
-  marker.setLatLng({ lat: latitude, lng: longitude });
-  polyline.setLatLngs(trackCoordinates.slice(0, position));
-});
-
-window.addEventListener(`phx:map_view`, (e) => {
-  map.setView([e.detail.latitude, e.detail.longitude], 14);
-});
-
-window.addEventListener(`phx:clear_polyline`, (_e) => {
-  polyline.setLatLngs([]);
-});
-
-window.addEventListener(`phx:toggle_track`, (e) => {
-  if (e.detail.value) {
-    polyline.addTo(map);
-  } else {
-    polyline.remove();
+Hooks.Leaflet = {
+  mounted() {
+    interactiveMap(this);
   }
-});
+}
 
 let csrfToken = document
   .querySelector("meta[name='csrf-token']")
   .getAttribute("content");
 let liveSocket = new LiveSocket("/live", Socket, {
+  hooks: Hooks,
   params: { _csrf_token: csrfToken },
 });
 

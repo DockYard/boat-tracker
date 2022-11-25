@@ -1,5 +1,5 @@
 <div class="container">
-  <div id="map" phx-update="ignore"></div><br>
+  <div id="map" phx-hook="Leaflet" phx-update="ignore"></div><br>
     <form phx-change="set_position">
       <label for="position"><%= print_coordinates(@current_coordinates) %></label>
       <input style="width:100%" type="range" id="position" name="position" value={@current_position} min="0" max={@max_position}>
