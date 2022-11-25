@@ -8,6 +8,7 @@ export function rangeSlider(hook) {
   noUiSlider.create(divElement, {
     start: [0, parseFloat(max)],
     connect: true,
+    behaviour: "tap-drag",
     range: {
       'min': 0,
       'max': parseFloat(max)
