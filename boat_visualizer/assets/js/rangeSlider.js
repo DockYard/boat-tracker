@@ -14,4 +14,8 @@ export function rangeSlider(hook) {
       'max': parseFloat(max)
     }
   });
+
+  divElement.noUiSlider.on('update', function([min, max], _handle) {
+    hook.pushEvent('update_range', { min: min, max: max });
+  });
 }

@@ -18,15 +18,19 @@ defmodule BoatVisualizerWeb.MapLive do
      socket
      |> assign(:current_coordinates, initial_coordinates)
      |> assign(:coordinates, coordinates)
+     |> assign(:ranged_coordinates, coordinates)
      |> assign(:map_center, map_center)
-     |> assign(:current_position, 0)
+     |> assign(:min_position, 0)
      |> assign(:max_position, Enum.count(coordinates) - 1)
+     |> assign(:current_position, 0)
+     |> assign(:current_min_position, 0)
+     |> assign(:current_max_position, Enum.count(coordinates) - 1)
      |> assign(:show_track, true)}
   end
 
   def handle_event("set_position", %{"position" => position}, %{assigns: assigns} = socket) do
     new_position = String.to_integer(position)
-    new_coordinates = Enum.at(assigns.coordinates, new_position)
+    new_coordinates = Enum.at(assigns.ranged_coordinates, new_position)
     Animation.set_marker_position(new_position)
 
     {:noreply,
@@ -42,6 +46,22 @@ defmodule BoatVisualizerWeb.MapLive do
      socket
      |> assign(:show_track, !value)
      |> push_event("toggle_track", %{value: !value})}
+  end
+
+  def handle_event("update_range", %{"min" => min, "max" => max}, socket) do
+    {min_value, _} = Integer.parse(min)
+    {max_value, _} = Integer.parse(max)
+
+    ranged_coordinates = Enum.slice(socket.assigns.coordinates, min_value..max_value)
+    Animation.set_track_coordinates(ranged_coordinates)
+
+    {:noreply,
+     socket
+     |> assign(:ranged_coordinates, ranged_coordinates)
+     |> assign(:current_coordinates, Enum.at(socket.assigns.coordinates, min_value))
+     |> assign(:current_position, min_value)
+     |> assign(:current_min_position, min_value)
+     |> assign(:current_max_position, max_value)}
   end
 
   def handle_info({"track_coordinates", coordinates}, socket) do
