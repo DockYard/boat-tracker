@@ -1,6 +1,6 @@
 <div class="container">
   <div id="map" phx-hook="Leaflet" phx-update="ignore"></div><br>
-  <div id="range" phx-hook="RangeSlider" phx-update="ignore"></div><br>
+  <div id="range" phx-hook="RangeSlider" phx-update="ignore" data-max={@max_position}></div><br>
 
   <form phx-change="set_position">
     <label for="position"><%= print_coordinates(@current_coordinates) %></label>
