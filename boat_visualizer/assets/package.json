@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "leaflet": "^1.8.0"
+    "leaflet": "^1.8.0",
+    "nouislider": "^15.6.1"
   }
 }
