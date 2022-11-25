@@ -25,13 +25,20 @@ import "phoenix_html";
 import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
-import { interactiveMap } from "./leaflet"
+import { interactiveMap } from "./leaflet";
+import { rangeSlider } from "./rangeSlider";
 
 let Hooks = {};
 
 Hooks.Leaflet = {
   mounted() {
     interactiveMap(this);
+  }
+}
+
+Hooks.RangeSlider = {
+  mounted() {
+    rangeSlider(this);
   }
 }
 
