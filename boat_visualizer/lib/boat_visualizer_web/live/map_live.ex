@@ -30,7 +30,7 @@ defmodule BoatVisualizerWeb.MapLive do
 
   def handle_event("set_position", %{"position" => position}, %{assigns: assigns} = socket) do
     new_position = String.to_integer(position)
-    new_coordinates = Enum.at(assigns.ranged_coordinates, new_position)
+    new_coordinates = Enum.at(assigns.coordinates, new_position)
     Animation.set_marker_position(new_position)
 
     {:noreply,
@@ -53,7 +53,7 @@ defmodule BoatVisualizerWeb.MapLive do
     {max_value, _} = Integer.parse(max)
 
     ranged_coordinates = Enum.slice(socket.assigns.coordinates, min_value..max_value)
-    Animation.set_track_coordinates(ranged_coordinates)
+    Animation.set_marker_position(min_value)
 
     {:noreply,
      socket
