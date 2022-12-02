@@ -58,47 +58,79 @@ export function interactiveMap(hook) {
     }
   });
 
+  const colorArrayToRgb = ([r, g, b]) => `rgb(${r}, ${g}, ${b})`;
+
+  const colorLerp = ([s_r, s_g, s_b], [e_r, e_g, e_b], t) => {
+    const lerp = (x, y, t) => Math.round(x + (y - x) * t);
+    return colorArrayToRgb([lerp(s_r, e_r, t), lerp(s_g, e_g, t), lerp(
+      s_b,
+      e_b,
+      t
+    )]);
+  };
+
+  const interpolateColors = (value) => {
+    const config = [
+      [0, [0, 0, 255]],
+      [0.56, [0, 255, 255]],
+      [1.13, [0, 255, 0]],
+      [1.69, [255, 255, 0]],
+      [2.25, [255, 0, 0]],
+    ];
+
+    for (let i = 0; i < config.length - 1; i++) {
+      const [lowerBound, startColor] = config[i];
+      const [upperBound, endColor] = config[i + 1];
+      if (value >= lowerBound && value < upperBound) {
+        const t = (value - lowerBound) / (upperBound - lowerBound);
+        return colorLerp(startColor, endColor, t);
+      }
+    }
+
+    return colorArrayToRgb(config[config.length - 1][1]);
+  };
+
   window.addEventListener(`phx:add_current_markers`, (e) => {
+    const markerBaseColor = interpolateColors(0);
+
     const geojsonMarkerOptions = {
-      radius: 2,
-      fillColor: "#ff7800",
-      color: "#000",
+      radius: 0.5,
+      fillColor: markerBaseColor,
+      color: markerBaseColor,
       weight: 1,
       opacity: 1,
-      fillOpacity: 0.8,
+      fillOpacity: 1,
     };
 
-    // var myIcon = L.icon({
-    //   iconUrl: "/images/arrow_sdf.png",
-    //   iconSize: [100, 100],
-    //   iconAnchor: [50, 50],
-    //   popupAnchor: [0, 0],
-    // });
-
-    const svgIcon = L.divIcon({
-      html: `
-      <svg
-        width="4"
-        height="8"
-        viewBox="0 0 100 100"
-        version="1.1"
-        preserveAspectRatio="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M0 0 L50 100 L100 0 Z" fill="#7A8BE7"></path>
-      </svg>`,
-      className: "",
-      iconSize: [4, 8],
-      iconAnchor: [2, 4],
-    });
+    const arrowIcon = (speed) => {
+      const color = interpolateColors(speed);
+      return L.divIcon({
+        html: `
+        <svg width="14px" height="14px" viewBox="0 0 14 14" version="1.1">
+          <path style="stroke:none;fill-rule:evenodd;fill:${color};fill-opacity:1;" d="M 12.765625 7 L 8.375 10.636719 L 8.75 11.082031 L 14 6.695312 L 8.75 2.332031 L 8.375 2.777344 L 12.765625 6.417969 L 0 6.417969 L 0 7 Z M 12.765625 7 "/>
+        </svg>`,
+        className: "",
+        iconSize: [12, 8],
+        iconAnchor: [6, 4],
+      });
+    };
 
     L.geoJSON(e.detail.current_data, {
       pointToLayer: function (feature, latlng) {
+        const { direction, speed } = feature.properties;
+
+        if (speed == 0) {
+          return undefined;
+        }
+
+        if (speed > 0 && speed < 0.05) {
+          return L.circleMarker(latlng, geojsonMarkerOptions);
+        }
+
         return L.marker(latlng, {
-          icon: svgIcon,
-          rotationAngle: feature.properties.direction,
+          icon: arrowIcon(speed),
+          rotationAngle: direction - 90,
         });
-        return L.circleMarker(latlng, geojsonMarkerOptions);
       },
     }).addTo(map);
   });
