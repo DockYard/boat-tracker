@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "leaflet": "^1.8.0"
+    "leaflet": "^1.8.0",
+    "leaflet-rotatedmarker": "^0.2.0"
   }
 }

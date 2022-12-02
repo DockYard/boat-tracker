@@ -10,6 +10,8 @@ defmodule BoatVisualizerWeb.MapLive do
     [initial_coordinates | _] = coordinates = Coordinates.get_coordinates("trip-01.csv")
     map_center = Coordinates.get_center(coordinates)
 
+    current_data = File.read!("/tmp/geojson.json") |> Jason.decode!() |> Enum.take_every(4)
+
     Animation.set_track_coordinates(coordinates)
     Animation.set_map_view(map_center)
     Animation.set_marker_coordinates(initial_coordinates)
@@ -21,7 +23,8 @@ defmodule BoatVisualizerWeb.MapLive do
      |> assign(:map_center, map_center)
      |> assign(:current_position, 0)
      |> assign(:max_position, Enum.count(coordinates) - 1)
-     |> assign(:show_track, true)}
+     |> assign(:show_track, true)
+     |> assign(:current_data, current_data)}
   end
 
   def handle_event("set_position", %{"position" => position}, %{assigns: assigns} = socket) do
@@ -42,6 +45,10 @@ defmodule BoatVisualizerWeb.MapLive do
      socket
      |> assign(:show_track, !value)
      |> push_event("toggle_track", %{value: !value})}
+  end
+
+  def handle_event("add_current_markers", _, %{assigns: assigns} = socket) do
+    {:noreply, push_event(socket, "add_current_markers", %{current_data: assigns.current_data})}
   end
 
   def handle_info({"track_coordinates", coordinates}, socket) do
