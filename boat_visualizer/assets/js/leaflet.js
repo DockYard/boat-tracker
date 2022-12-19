@@ -1,6 +1,51 @@
-import Leaflet, { canvas } from "leaflet";
-// import "leaflet-rotatedmarker";
+import Leaflet from "leaflet";
 import "leaflet-canvas-markers";
+
+const colorArrayToRgb = ([r, g, b]) => `rgb(${r}, ${g}, ${b})`;
+
+const colorLerp = ([s_r, s_g, s_b], [e_r, e_g, e_b], t) => {
+  const lerp = (x, y, t) => Math.round(x + (y - x) * t);
+  return colorArrayToRgb([
+    lerp(s_r, e_r, t),
+    lerp(s_g, e_g, t),
+    lerp(s_b, e_b, t),
+  ]);
+};
+
+const interpolateColors = (value) => {
+  const config = [
+    [0, [0, 0, 255]],
+    [0.56, [0, 255, 255]],
+    [1.13, [0, 255, 0]],
+    [1.69, [255, 255, 0]],
+    [2.25, [255, 0, 0]],
+  ];
+
+  for (let i = 0; i < config.length - 1; i++) {
+    const [lowerBound, startColor] = config[i];
+    const [upperBound, endColor] = config[i + 1];
+    if (value >= lowerBound && value < upperBound) {
+      const t = (value - lowerBound) / (upperBound - lowerBound);
+      return colorLerp(startColor, endColor, t);
+    }
+  }
+
+  return colorArrayToRgb(config[config.length - 1][1]);
+};
+
+const drawArrowIcon = (ctx, speed, width, height) => {
+  const color = interpolateColors(speed);
+  // 14 is the original viewport width and height for the SVG
+  const xScale = width / 14;
+  const yScale = height / 14;
+  const path = new Path2D(
+    "M 12.765625 7 L 8.375 10.636719 L 8.75 11.082031 L 14 6.695312 L 8.75 2.332031 L 8.375 2.777344 L 12.765625 6.417969 L 0 6.417969 L 0 7 Z M 12.765625 7"
+  );
+  ctx.strokeStyle = color;
+  ctx.scale(xScale, yScale);
+  ctx.stroke(path);
+  return ctx;
+};
 
 L.Canvas.include({
   _updateCustomIconMarker: function (layer) {
@@ -9,25 +54,20 @@ L.Canvas.include({
     }
 
     const p = layer._point;
-    const ctx = this._ctx;
-    const { options: {rotationAngle, width, height} } = layer;
+    let ctx = this._ctx;
+    const {
+      options: { speed, rotationAngle, width, height },
+    } = layer;
     const h = Math.max(Math.round(height), 1);
     const w = Math.max(Math.round(width), 1);
-    console.log(layer);
-
     this._layers[layer._leaflet_id] = layer;
 
-    const theta = (rotationAngle * Math.PI) / 180;
+    const theta = ((rotationAngle - 90) * Math.PI) / 180;
 
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(theta);
-    ctx.beginPath();
-    ctx.moveTo(0, -h / 2);
-    ctx.lineTo(-w / 2, h / 2);
-    ctx.lineTo(w / 2, h / 2);
-    ctx.closePath();
-    this._fillStroke(ctx, layer);
+    ctx = drawArrowIcon(ctx, speed, w, h);
     ctx.restore();
   },
 });
@@ -99,38 +139,6 @@ export function interactiveMap(hook) {
     }
   });
 
-  const colorArrayToRgb = ([r, g, b]) => `rgb(${r}, ${g}, ${b})`;
-
-  const colorLerp = ([s_r, s_g, s_b], [e_r, e_g, e_b], t) => {
-    const lerp = (x, y, t) => Math.round(x + (y - x) * t);
-    return colorArrayToRgb([
-      lerp(s_r, e_r, t),
-      lerp(s_g, e_g, t),
-      lerp(s_b, e_b, t),
-    ]);
-  };
-
-  const interpolateColors = (value) => {
-    const config = [
-      [0, [0, 0, 255]],
-      [0.56, [0, 255, 255]],
-      [1.13, [0, 255, 0]],
-      [1.69, [255, 255, 0]],
-      [2.25, [255, 0, 0]],
-    ];
-
-    for (let i = 0; i < config.length - 1; i++) {
-      const [lowerBound, startColor] = config[i];
-      const [upperBound, endColor] = config[i + 1];
-      if (value >= lowerBound && value < upperBound) {
-        const t = (value - lowerBound) / (upperBound - lowerBound);
-        return colorLerp(startColor, endColor, t);
-      }
-    }
-
-    return colorArrayToRgb(config[config.length - 1][1]);
-  };
-
   window.addEventListener(`phx:add_current_markers`, (e) => {
     const markerBaseColor = interpolateColors(0);
 
@@ -143,49 +151,94 @@ export function interactiveMap(hook) {
       weight: 1,
       opacity: 1,
       fillOpacity: 1,
-      filter: (_) => map.getZoom() >= 12,
+      // filter: (_) => map.getZoom() >= 12,
       keyboard: false,
       renderer: canvasRenderer,
     };
 
-    // const arrowIcon = (speed) => {
-    //   const color = interpolateColors(speed);
-    //   const svg = `
-    //     <svg width="14px" height="14px" viewBox="0 0 14 14" version="1.1">
-    //       <path style="stroke:none;fill-rule:evenodd;fill:${color};fill-opacity:1;" d="M 12.765625 7 L 8.375 10.636719 L 8.75 11.082031 L 14 6.695312 L 8.75 2.332031 L 8.375 2.777344 L 12.765625 6.417969 L 0 6.417969 L 0 7 Z M 12.765625 7 "/>
-    //     </svg>`;
-
-    //   return L.divIcon({
-    //     html: svg,
-    //     className: "",
-    //     iconSize: [12, 8],
-    //     iconAnchor: [6, 4],
-    //   });
-    // };
-
-    L.geoJSON(e.detail.current_data, {
-      pointToLayer: function (feature, latlng) {
-        const { direction, speed } = feature.properties;
+    // We'll split the markers into 3 zoom levels.
+    // each zoom level gets its own layer
+    const splitZooms = [15, 10, 5];
+    const [dataCircles, splits] = e.detail.current_data.reduce(
+      (acc, item, idx) => {
+        const speed = item.properties.speed;
 
         if (speed == 0) {
-          return undefined;
+          // don't draw
+          return acc;
         }
 
-        if (speed > 0 && speed < 0.05) {
-          return L.circleMarker(latlng, geojsonMarkerOptions);
+        if (speed < 0.05) {
+          // draw as a circle
+          acc[0].push(item);
+          return acc;
         }
 
-        const color = interpolateColors(speed);
-
-        return new CustomIconMarker(latlng, {
-          ...geojsonMarkerOptions,
-          rotationAngle: direction,
-          width: 4,
-          height: 8,
-          fillColor: color,
-          color: color,
-        });
+        // draw as an arrow
+        acc[1][idx % (splitZooms.length + 1)].push(item);
+        return acc;
       },
-    }).addTo(map);
+      [[], Array(splitZooms.length + 1).fill([])]
+    );
+
+    const toLayer = (data) =>
+      L.geoJSON(data, {
+        pointToLayer: function (feature, latlng) {
+          const { direction, speed } = feature.properties;
+
+          if (speed == 0) {
+            return undefined;
+          }
+
+          if (speed > 0 && speed < 0.05) {
+            return L.circleMarker(latlng, geojsonMarkerOptions);
+          }
+
+          const color = interpolateColors(speed);
+
+          return new CustomIconMarker(latlng, {
+            ...geojsonMarkerOptions,
+            rotationAngle: direction,
+            speed,
+            width: 12,
+            height: 6,
+            fillColor: color,
+            color: color,
+          });
+        },
+      });
+
+    const zoomCircles = 13;
+    const layerCircles = toLayer(dataCircles);
+
+    const layers = splitZooms.map((zoomLimit, idx) => {
+      return {
+        zoomLimit,
+        layer: toLayer(splits[idx + 1]),
+      };
+    });
+
+    // always-on layer
+    map.addLayer(toLayer(splits[0]));
+
+    map.on("zoomend", function (_) {
+      const zoom = map.getZoom();
+
+      if (zoom <= zoomCircles && map.hasLayer(layerCircles)) {
+        map.removeLayer(layerCircles);
+      }
+      if (zoom > zoomCircles && !map.hasLayer(layerCircles)) {
+        map.addLayer(layerCircles);
+      }
+
+      for ({zoomLimit, layer} of layers) {
+        if (zoom <= zoomLimit && map.hasLayer(layer)) {
+          map.removeLayer(layer);
+        }
+        if (zoom > zoomLimit && !map.hasLayer(layer)) {
+          map.addLayer(layer);
+        }
+      }
+    });
   });
 }
