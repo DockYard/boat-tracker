@@ -1,39 +1,40 @@
 import Leaflet, { canvas } from "leaflet";
-import "leaflet-rotatedmarker";
+// import "leaflet-rotatedmarker";
+import "leaflet-canvas-markers";
 
 L.Canvas.include({
-  _updateMarker6Point: function (layer) {
+  _updateCustomIconMarker: function (layer) {
     if (!this._drawing || layer._empty()) {
       return;
     }
 
-    var p = layer._point,
-      ctx = this._ctx,
-      r = Math.max(Math.round(layer._radius), 1);
+    const p = layer._point;
+    const ctx = this._ctx;
+    const { options: {rotationAngle, width, height} } = layer;
+    const h = Math.max(Math.round(height), 1);
+    const w = Math.max(Math.round(width), 1);
+    console.log(layer);
 
     this._layers[layer._leaflet_id] = layer;
 
+    const theta = (rotationAngle * Math.PI) / 180;
+
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(theta);
     ctx.beginPath();
-    ctx.moveTo(p.x + r, p.y);
-    ctx.lineTo(p.x + 0.43 * r, p.y + 0.25 * r);
-    ctx.lineTo(p.x + 0.5 * r, p.y + 0.87 * r);
-    ctx.lineTo(p.x, p.y + 0.5 * r);
-    ctx.lineTo(p.x - 0.5 * r, p.y + 0.87 * r);
-    ctx.lineTo(p.x - 0.43 * r, p.y + 0.25 * r);
-    ctx.lineTo(p.x - r, p.y);
-    ctx.lineTo(p.x - 0.43 * r, p.y - 0.25 * r);
-    ctx.lineTo(p.x - 0.5 * r, p.y - 0.87 * r);
-    ctx.lineTo(p.x, p.y - 0.5 * r);
-    ctx.lineTo(p.x + 0.5 * r, p.y - 0.87 * r);
-    ctx.lineTo(p.x + 0.43 * r, p.y - 0.25 * r);
+    ctx.moveTo(0, -h / 2);
+    ctx.lineTo(-w / 2, h / 2);
+    ctx.lineTo(w / 2, h / 2);
     ctx.closePath();
     this._fillStroke(ctx, layer);
+    ctx.restore();
   },
 });
 
-const Marker6Point = L.CircleMarker.extend({
+const CustomIconMarker = L.CircleMarker.extend({
   _updatePath: function () {
-    this._renderer._updateMarker6Point(this);
+    this._renderer._updateCustomIconMarker(this);
   },
 });
 
@@ -147,21 +148,20 @@ export function interactiveMap(hook) {
       renderer: canvasRenderer,
     };
 
-    const arrowIcon = (speed) => {
-      const color = interpolateColors(speed);
-      const svg = `
-        <svg width="14px" height="14px" viewBox="0 0 14 14" version="1.1">
-          <path style="stroke:none;fill-rule:evenodd;fill:${color};fill-opacity:1;" d="M 12.765625 7 L 8.375 10.636719 L 8.75 11.082031 L 14 6.695312 L 8.75 2.332031 L 8.375 2.777344 L 12.765625 6.417969 L 0 6.417969 L 0 7 Z M 12.765625 7 "/>
-        </svg>`;
+    // const arrowIcon = (speed) => {
+    //   const color = interpolateColors(speed);
+    //   const svg = `
+    //     <svg width="14px" height="14px" viewBox="0 0 14 14" version="1.1">
+    //       <path style="stroke:none;fill-rule:evenodd;fill:${color};fill-opacity:1;" d="M 12.765625 7 L 8.375 10.636719 L 8.75 11.082031 L 14 6.695312 L 8.75 2.332031 L 8.375 2.777344 L 12.765625 6.417969 L 0 6.417969 L 0 7 Z M 12.765625 7 "/>
+    //     </svg>`;
 
-      return svg
-      return L.divIcon({
-        html: svg,
-        className: "",
-        iconSize: [12, 8],
-        iconAnchor: [6, 4],
-      });
-    };
+    //   return L.divIcon({
+    //     html: svg,
+    //     className: "",
+    //     iconSize: [12, 8],
+    //     iconAnchor: [6, 4],
+    //   });
+    // };
 
     L.geoJSON(e.detail.current_data, {
       pointToLayer: function (feature, latlng) {
@@ -175,14 +175,15 @@ export function interactiveMap(hook) {
           return L.circleMarker(latlng, geojsonMarkerOptions);
         }
 
-        return new Marker6Point(latlng, {...geojsonMarkerOptions, radius: 2, fillColor: "red", color: "red"});
+        const color = interpolateColors(speed);
 
-        L.marker(latlng, {
-          rendered: L.canvas(),
-          icon: arrowIcon(speed),
-          rotationAngle: direction - 90,
-          keyboard: false,
-          alt: "",
+        return new CustomIconMarker(latlng, {
+          ...geojsonMarkerOptions,
+          rotationAngle: direction,
+          width: 4,
+          height: 8,
+          fillColor: color,
+          color: color,
         });
       },
     }).addTo(map);

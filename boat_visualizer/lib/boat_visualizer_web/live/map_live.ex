@@ -13,7 +13,6 @@ defmodule BoatVisualizerWeb.MapLive do
     current_data =
       File.read!(Path.join(:code.priv_dir(:boat_visualizer), "geojson.json"))
       |> Jason.decode!()
-      |> Enum.take_every(1)
 
     Animation.set_track_coordinates(coordinates)
     Animation.set_map_view(map_center)
