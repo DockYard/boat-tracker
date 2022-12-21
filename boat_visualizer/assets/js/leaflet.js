@@ -3,8 +3,7 @@ import "leaflet-canvas-markers";
 
 const colorArrayToRgb = ([r, g, b]) => `rgb(${r}, ${g}, ${b})`;
 
-let previousLayers = [];
-let previousZoomEndHandler = (_) => {};
+let previousLayer = undefined;
 
 const colorLerp = ([s_r, s_g, s_b], [e_r, e_g, e_b], t) => {
   const lerp = (x, y, t) => Math.round(x + (y - x) * t);
@@ -100,6 +99,24 @@ export function interactiveMap(hook) {
   var marker = L.marker([42.27, -70.997]).addTo(map);
   marker.bindPopup("Boat Node");
 
+  map.on("zoomlevelschange resize load moveend viewreset", (e) => {
+    console.log("map viewport change");
+    const {
+      _southWest: { lat: min_lat, lng: min_lon },
+      _northEast: { lat: max_lat, lng: max_lon },
+    } = map.getBounds();
+
+    hook.pushEvent(
+      "change_bounds",
+      {
+        bounds: { min_lat, max_lat, min_lon, max_lon },
+      },
+      (result) => {
+        result?.ok && hook.pushEvent("set_position", {});
+      }
+    );
+  });
+
   window.addEventListener(`phx:track_coordinates`, (e) => {
     const {
       detail: { coordinates },
@@ -154,108 +171,49 @@ export function interactiveMap(hook) {
       weight: 1,
       opacity: 1,
       fillOpacity: 1,
-      // filter: (_) => map.getZoom() >= 12,
       keyboard: false,
       renderer: canvasRenderer,
     };
 
-    // We'll split the markers into 3 zoom levels.
-    // each zoom level gets its own layer
-    const splitZooms = [15, 10, 5];
-    const [dataCircles, splits] = e.detail.current_data.reduce(
-      (acc, item, idx) => {
-        const speed = item.properties.speed;
-
-        if (speed == 0) {
-          // don't draw
-          return acc;
-        }
-
-        if (speed < 0.05) {
-          // draw as a circle
-          acc[0].push(item);
-          return acc;
-        }
-
-        // draw as an arrow
-        acc[1][idx % (splitZooms.length + 1)].push(item);
-        return acc;
-      },
-      [[], Array(splitZooms.length + 1).fill([])]
-    );
-
-    const toLayer = (data) =>
-      L.geoJSON(data, {
-        pointToLayer: function (feature, latlng) {
-          const { direction, speed } = feature.properties;
-
-          if (speed == 0) {
-            return undefined;
-          }
-
-          if (speed > 0 && speed < 0.05) {
-            return L.circleMarker(latlng, geojsonMarkerOptions);
-          }
-
-          const color = interpolateColors(speed);
-
-          return new CustomIconMarker(latlng, {
-            ...geojsonMarkerOptions,
-            rotationAngle: direction,
-            speed,
-            width: 12,
-            height: 6,
-            fillColor: color,
-            color: color,
-          });
-        },
-      });
-
-    const zoomCircles = 13;
-    const layerCircles = toLayer(dataCircles);
-
-    const layers = splitZooms.map((zoomLimit, idx) => {
+    const data = e.detail.current_data.map(([lon, lat, direction, speed]) => {
       return {
-        zoomLimit,
-        layer: toLayer(splits[idx + 1]),
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [lon, lat],
+        },
+        properties: { speed, direction },
       };
     });
 
-    // always-on layer
-    const alwaysOnLayer = toLayer(splits[0]);
-    map.addLayer(alwaysOnLayer);
+    const layer = L.geoJSON(data, {
+      pointToLayer: function (feature, latlng) {
+        const { direction, speed } = feature.properties;
 
-    const zoomEndHandler = function (_) {
-      const zoom = map.getZoom();
-
-      if (zoom <= zoomCircles && map.hasLayer(layerCircles)) {
-        map.removeLayer(layerCircles);
-      }
-      if (zoom > zoomCircles && !map.hasLayer(layerCircles)) {
-        map.addLayer(layerCircles);
-      }
-
-      for ({ zoomLimit, layer } of layers) {
-        if (zoom <= zoomLimit && map.hasLayer(layer)) {
-          map.removeLayer(layer);
+        if (speed == 0) {
+          return undefined;
         }
-        if (zoom > zoomLimit && !map.hasLayer(layer)) {
-          map.addLayer(layer);
+
+        if (speed > 0 && speed < 0.05) {
+          return L.circleMarker(latlng, geojsonMarkerOptions);
         }
-      }
-    };
 
-    map.off("zoomend", previousZoomEndHandler);
+        const color = interpolateColors(speed);
 
-    previousZoomEndHandler = zoomEndHandler;
-    map.on("zoomend", zoomEndHandler);
+        return new CustomIconMarker(latlng, {
+          ...geojsonMarkerOptions,
+          rotationAngle: direction,
+          speed,
+          width: 12,
+          height: 6,
+          fillColor: color,
+          color: color,
+        });
+      },
+    });
 
-    for (layer of previousLayers) {
-      map.removeLayer(layer);
-    }
-
-    previousLayers = layers.map((x) => x);
-    previousLayers.push(alwaysOnLayer);
-    previousLayers.push(layerCircles);
+    map.addLayer(layer);
+    previousLayer && map.removeLayer(previousLayer);
+    previousLayer = layer;
   });
 }

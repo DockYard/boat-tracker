@@ -16,7 +16,13 @@ defmodule BoatVisualizerWeb.MapLive do
     Animation.set_map_view(map_center)
     Animation.set_marker_coordinates(initial_coordinates)
 
-    {now, _us} = NaiveDateTime.utc_now() |> NaiveDateTime.to_gregorian_seconds()
+    {now, us} = NaiveDateTime.utc_now() |> NaiveDateTime.to_gregorian_seconds()
+    now = now + us / 1_000_000
+
+    min_lat = 42.1666
+    max_lat = 42.4093
+    min_lon = -71.0473
+    max_lon = -70.8557
 
     socket =
       socket
@@ -27,8 +33,18 @@ defmodule BoatVisualizerWeb.MapLive do
       |> assign(:max_position, Enum.count(coordinates) - 1)
       |> assign(:show_track, true)
       |> assign(:last_event_sent_at, now)
+      |> assign(:bounding_box, %{
+        "min_lat" => min_lat,
+        "min_lon" => min_lon,
+        "max_lat" => max_lat,
+        "max_lon" => max_lon
+      })
 
     {:ok, socket}
+  end
+
+  def handle_event("change_bounds", %{"bounds" => bounding_box}, %{assigns: assigns} = socket) do
+    {:reply, %{ok: true}, assign(socket, :bounding_box, bounding_box)}
   end
 
   def handle_event("set_position", event_data, %{assigns: assigns} = socket) do
@@ -44,25 +60,27 @@ defmodule BoatVisualizerWeb.MapLive do
     new_coordinates = Enum.at(assigns.coordinates, new_position)
     Animation.set_marker_position(new_position)
 
-    min_lat = 42.1666
-    max_lat = 42.4093
-    min_lon = -71.0473
-    max_lon = -70.8557
-
     # epoch for fixed dataset is from 59898.0 to 59904.0
     # 10751 is the max value for position
 
-    {now, _us} = NaiveDateTime.utc_now() |> NaiveDateTime.to_gregorian_seconds()
+    {now, us} = NaiveDateTime.utc_now() |> NaiveDateTime.to_gregorian_seconds()
+    now = now + us / 1_000_000
     diff = now - assigns.last_event_sent_at
 
     {last_event_sent_at, current_data} =
-      if (throttle and diff > 1) or (not throttle) do
+      if (throttle and diff > 0.25) or not throttle do
         Logger.debug("[diff=#{diff}] Sending current data event")
         t = new_position / 10751
         time = 59898.0 * (1 - t) + 59904.0 * t
 
-        %{features: data} =
-          BoatVisualizer.NetCDF.get_geojson(time, min_lat, max_lat, min_lon, max_lon)
+        %{
+          "min_lat" => min_lat,
+          "min_lon" => min_lon,
+          "max_lat" => max_lat,
+          "max_lon" => max_lon
+        } = assigns.bounding_box
+
+        data = BoatVisualizer.NetCDF.get_geodata(time, min_lat, max_lat, min_lon, max_lon)
 
         {now, data}
       else
