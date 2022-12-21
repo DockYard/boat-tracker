@@ -70,8 +70,10 @@ defmodule BoatVisualizerWeb.MapLive do
     {last_event_sent_at, current_data} =
       if (throttle and diff > 0.25) or not throttle do
         Logger.debug("[diff=#{diff}] Sending current data event")
-        t = new_position / 10751
-        time = 59898.0 * (1 - t) + 59904.0 * t
+        {time, _, _} = new_coordinates
+        {t0, _, _} = Enum.at(assigns.coordinates, 0)
+        milliseconds_diff = NaiveDateTime.diff(time, t0, :millisecond)
+        time = BoatVisualizer.NetCDF.epoch() + milliseconds_diff / (24 * :timer.hours(1))
 
         %{
           "min_lat" => min_lat,
@@ -81,6 +83,8 @@ defmodule BoatVisualizerWeb.MapLive do
         } = assigns.bounding_box
 
         data = BoatVisualizer.NetCDF.get_geodata(time, min_lat, max_lat, min_lon, max_lon)
+
+        Logger.debug("size=#{data |> Jason.encode!() |> byte_size()}")
 
         {now, data}
       else

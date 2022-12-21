@@ -6,7 +6,7 @@ defmodule BoatVisualizer.NetCDF do
 
   require Logger
 
-  def start_link(%{dataset_filename: filename}) do
+  def start_link(%{dataset_filename: filename, start_date: start_date}) do
     {:ok, file} = NetCDF.File.open(filename)
     Logger.info("Loading NetCDF data")
     file_data = load(file)
@@ -26,7 +26,7 @@ defmodule BoatVisualizer.NetCDF do
 
     Agent.start_link(
       fn ->
-        %{geodata: geodata, time: time_t}
+        %{geodata: geodata, time: time_t, epoch: Cldr.Calendar.modified_julian_day(start_date)}
       end,
       name: __MODULE__
     )
@@ -49,10 +49,19 @@ defmodule BoatVisualizer.NetCDF do
         |> Nx.argmax(tie_break: :high)
         |> Nx.to_number()
 
+      Logger.debug("time_idx: #{time_idx}")
+
       Enum.filter(state.geodata[time_idx], fn [lon, lat, _direction, _speed] ->
         lon >= min_lon and lon <= max_lon and lat >= min_lat and lat <= max_lat
       end)
     end)
+  end
+
+  @doc """
+  Returns the start time for the file
+  """
+  def epoch do
+    Agent.get(__MODULE__, & &1.epoch)
   end
 
   defp load(file) do
