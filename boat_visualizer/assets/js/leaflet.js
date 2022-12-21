@@ -3,6 +3,9 @@ import "leaflet-canvas-markers";
 
 const colorArrayToRgb = ([r, g, b]) => `rgb(${r}, ${g}, ${b})`;
 
+let previousLayers = [];
+let previousZoomEndHandler = (_) => {};
+
 const colorLerp = ([s_r, s_g, s_b], [e_r, e_g, e_b], t) => {
   const lerp = (x, y, t) => Math.round(x + (y - x) * t);
   return colorArrayToRgb([
@@ -142,7 +145,7 @@ export function interactiveMap(hook) {
   window.addEventListener(`phx:add_current_markers`, (e) => {
     const markerBaseColor = interpolateColors(0);
 
-    const canvasRenderer = L.canvas({ padding: 0.5 });
+    const canvasRenderer = L.canvas({ padding: 0 });
 
     const geojsonMarkerOptions = {
       radius: 0.5,
@@ -219,9 +222,10 @@ export function interactiveMap(hook) {
     });
 
     // always-on layer
-    map.addLayer(toLayer(splits[0]));
+    const alwaysOnLayer = toLayer(splits[0]);
+    map.addLayer(alwaysOnLayer);
 
-    map.on("zoomend", function (_) {
+    const zoomEndHandler = function (_) {
       const zoom = map.getZoom();
 
       if (zoom <= zoomCircles && map.hasLayer(layerCircles)) {
@@ -231,7 +235,7 @@ export function interactiveMap(hook) {
         map.addLayer(layerCircles);
       }
 
-      for ({zoomLimit, layer} of layers) {
+      for ({ zoomLimit, layer } of layers) {
         if (zoom <= zoomLimit && map.hasLayer(layer)) {
           map.removeLayer(layer);
         }
@@ -239,6 +243,19 @@ export function interactiveMap(hook) {
           map.addLayer(layer);
         }
       }
-    });
+    };
+
+    map.off("zoomend", previousZoomEndHandler);
+
+    previousZoomEndHandler = zoomEndHandler;
+    map.on("zoomend", zoomEndHandler);
+
+    for (layer of previousLayers) {
+      map.removeLayer(layer);
+    }
+
+    previousLayers = layers.map((x) => x);
+    previousLayers.push(alwaysOnLayer);
+    previousLayers.push(layerCircles);
   });
 }

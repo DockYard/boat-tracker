@@ -15,6 +15,8 @@ defmodule BoatVisualizer.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: BoatVisualizer.PubSub},
       # Start the Endpoint (http/https)
+      {BoatVisualizer.NetCDF,
+       %{dataset_filename: Path.join(:code.priv_dir(:boat_visualizer), "dataset_20221118.nc")}},
       BoatVisualizerWeb.Endpoint
       # Start a worker by calling: BoatVisualizer.Worker.start_link(arg)
       # {BoatVisualizer.Worker, arg}
