@@ -12,7 +12,10 @@ if System.get_env("PHX_SERVER") && System.get_env("RELEASE_NAME") do
   config :boat_visualizer, BoatVisualizerWeb.Endpoint, server: true
 end
 
-config :nx, default_backend: EXLA.Backend, global_default_backend: EXLA.Backend
+config :nx,
+  default_backend: EXLA.Backend,
+  global_default_backend: EXLA.Backend,
+  default_defn_options: [compiler: EXLA]
 
 if config_env() == :prod do
   database_url =

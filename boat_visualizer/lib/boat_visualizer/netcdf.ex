@@ -4,17 +4,37 @@ defmodule BoatVisualizer.NetCDF do
   """
   use Agent
 
+  import Nx.Defn
+
   require Logger
 
-  def start_link(%{dataset_filename: filename, start_date: start_date}) do
+  # times are measured in days, so 1 min = 1 / (24 * 60)
+  @ten_minutes_in_mjd 10 / (24 * 60)
+  @pi :math.pi()
+
+  def start_link(%{dataset_filename: filename, start_date: start_date, end_date: end_date}) do
     {:ok, file} = NetCDF.File.open(filename)
     Logger.info("Loading NetCDF data")
     file_data = load(file)
 
-    time_t = Nx.tensor(file_data.t.value)
-
     Logger.info("Getting speed and direction tensors")
-    {speed, direction} = abs_and_direction_tensors(file_data.u, file_data.v, time_t)
+
+    {speed, direction} =
+      abs_and_direction_tensors(file_data.u, file_data.v, Nx.tensor(file_data.t.value))
+
+    start_mjd = Cldr.Calendar.modified_julian_day(start_date)
+    end_mjd = Cldr.Calendar.modified_julian_day(end_date)
+
+    Logger.info("Interpolating values")
+
+    {speed, direction, time_t} =
+      filter_epoch_and_interpolate_to_seconds(
+        speed,
+        direction,
+        file_data.t.value,
+        start_mjd,
+        end_mjd
+      )
 
     lat_t = Nx.tensor(file_data.lat.value)
     lon_t = Nx.tensor(file_data.lon.value)
@@ -26,7 +46,7 @@ defmodule BoatVisualizer.NetCDF do
 
     Agent.start_link(
       fn ->
-        %{geodata: geodata, time: time_t, epoch: Cldr.Calendar.modified_julian_day(start_date)}
+        %{geodata: geodata, time: time_t, epoch: start_mjd}
       end,
       name: __MODULE__
     )
@@ -85,7 +105,10 @@ defmodule BoatVisualizer.NetCDF do
 
     u = Nx.tensor(u_var.value, type: u_var.type) |> Nx.reshape(shape)
     v = Nx.tensor(v_var.value, type: v_var.type) |> Nx.reshape(shape)
+    abs_and_direction_tensors_n(u, v)
+  end
 
+  defnp abs_and_direction_tensors_n(u, v) do
     # We want to represent the direction as the angle where 0º is
     # "up" and 90º is "right". This is not the conventional "math"
     # angle, but its complement instead.
@@ -104,23 +127,84 @@ defmodule BoatVisualizer.NetCDF do
 
     speed = Nx.abs(complex_velocity)
     # convert m/s to knots
-    speed_kt = Nx.multiply(speed, 1.94384)
+    speed_kt = speed * 1.94384
 
     direction_rad = Nx.phase(complex_velocity)
 
-    direction_deg = Nx.multiply(direction_rad, 180 / :math.pi())
+    direction_deg = direction_rad * 180 / @pi
     # Wrap the values so that they're constrained between 0º and 360º
-    direction_deg =
-      Nx.select(Nx.less(direction_deg, 0), Nx.add(direction_deg, 360), direction_deg)
+
+    direction_deg = Nx.select(direction_deg < 0, direction_deg + 360, direction_deg)
 
     {speed_kt, direction_deg}
+  end
+
+  defp filter_epoch_and_interpolate_to_seconds(speed, direction, time, start_mjd, end_mjd) do
+    {time, indices} =
+      time
+      |> Enum.with_index()
+      |> Enum.filter(fn {t, _} -> start_mjd <= t and t <= end_mjd end)
+      |> Enum.unzip()
+
+    idx_tensor = Nx.tensor(indices)
+    speed = Nx.take(speed, idx_tensor)
+    direction = Nx.take(direction, idx_tensor)
+
+    {indices, p_values} =
+      time
+      |> Enum.with_index()
+      |> Enum.zip(tl(time))
+      |> Enum.flat_map(fn {{t1, idx}, t2} ->
+        dt_days = t2 - t1
+        num_minutes = ceil(dt_days / @ten_minutes_in_mjd)
+
+        # here we want to return pairs of idx and the respective p parameter
+        # for the linear interpolation x0 * (1 - p) + x1 * p,
+        # which is just p = n / num_minutes
+        Enum.map(0..(num_minutes - 1), fn n ->
+          {idx, n / num_minutes}
+        end)
+      end)
+      |> Enum.unzip()
+
+    indices = Nx.tensor(indices)
+    p_values = Nx.tensor(p_values)
+
+    Logger.debug("Interpolating speed")
+    speed = interpolate(speed, indices, Nx.new_axis(p_values, 1))
+
+    Logger.debug("Interpolating direction")
+    direction = interpolate(direction, indices, Nx.new_axis(p_values, 1))
+
+    Logger.debug("Interpolating time")
+    time = interpolate(Nx.tensor(time) |> IO.inspect(), IO.inspect(indices), IO.inspect(p_values))
+
+    IO.inspect(time, label: "time result")
+
+    Logger.debug("Done interpolating")
+
+    {speed, direction, time}
+  end
+
+  defn interpolate(tensor, indices, p) do
+    x0 = Nx.take(tensor, indices)
+    x1 = Nx.take(tensor, indices + 1)
+
+    x0 * (1 - p) + x1 * p
   end
 
   defp render_data(speed, direction_deg, lat, lon) do
     lat = Nx.to_flat_list(lat)
     lon = Nx.to_flat_list(lon)
 
-    for time <- 0..(Nx.axis_size(speed, 0) - 1), into: %{} do
+    n = Nx.axis_size(speed, 0) - 1
+    Logger.debug("Max time index #{n}")
+
+    for time <- 0..n, into: %{} do
+      if rem(time, 50) == 0 do
+        Logger.debug("Processing time index #{time}")
+      end
+
       geojson = render_data(speed, direction_deg, lat, lon, time)
       {time, geojson}
     end
@@ -139,9 +223,7 @@ defmodule BoatVisualizer.NetCDF do
         nil
 
       data ->
-        unless Enum.any?(data, &(&1 == :nan)) do
-          data
-        end
+        data
     end)
     |> Enum.filter(& &1)
   end
