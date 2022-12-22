@@ -30,20 +30,22 @@ defmodule BoatVisualizerWeb.MapLive do
       |> assign(:coordinates, coordinates)
       |> assign(:map_center, map_center)
       |> assign(:current_position, 0)
+      |> assign(:animate_time, false)
       |> assign(:max_position, Enum.count(coordinates) - 1)
       |> assign(:show_track, true)
-      |> assign(:last_event_sent_at, now)
+      |> assign(:last_current_event_sent_at, now)
       |> assign(:bounding_box, %{
         "min_lat" => min_lat,
         "min_lon" => min_lon,
         "max_lat" => max_lat,
         "max_lon" => max_lon
       })
+      |> assign(:last_current_event_index, nil)
 
     {:ok, socket}
   end
 
-  def handle_event("change_bounds", %{"bounds" => bounding_box}, %{assigns: assigns} = socket) do
+  def handle_event("change_bounds", %{"bounds" => bounding_box}, socket) do
     {:reply, %{ok: true}, assign(socket, :bounding_box, bounding_box)}
   end
 
@@ -65,15 +67,19 @@ defmodule BoatVisualizerWeb.MapLive do
 
     {now, us} = NaiveDateTime.utc_now() |> NaiveDateTime.to_gregorian_seconds()
     now = now + us / 1_000_000
-    diff = now - assigns.last_event_sent_at
+    diff = now - assigns.last_current_event_sent_at
 
-    {last_event_sent_at, current_data} =
-      if (throttle and diff > 0.25) or not throttle do
+    {time, _, _} = new_coordinates
+    {t0, _, _} = Enum.at(assigns.coordinates, 0)
+    milliseconds_diff = NaiveDateTime.diff(time, t0, :millisecond)
+    time = BoatVisualizer.NetCDF.epoch() + milliseconds_diff / (24 * :timer.hours(1))
+
+    index = BoatVisualizer.NetCDF.get_geodata_time_index(time)
+
+    {last_current_event_index, last_current_event_sent_at, current_data} =
+      if index != assigns.last_current_event_index and
+           ((throttle and diff > 0.25) or not throttle) do
         Logger.debug("[diff=#{diff}] Sending current data event")
-        {time, _, _} = new_coordinates
-        {t0, _, _} = Enum.at(assigns.coordinates, 0)
-        milliseconds_diff = NaiveDateTime.diff(time, t0, :millisecond)
-        time = BoatVisualizer.NetCDF.epoch() + milliseconds_diff / (24 * :timer.hours(1))
 
         %{
           "min_lat" => min_lat,
@@ -82,21 +88,22 @@ defmodule BoatVisualizerWeb.MapLive do
           "max_lon" => max_lon
         } = assigns.bounding_box
 
-        data = BoatVisualizer.NetCDF.get_geodata(time, min_lat, max_lat, min_lon, max_lon)
+        data = BoatVisualizer.NetCDF.get_geodata(index, min_lat, max_lat, min_lon, max_lon)
 
         Logger.debug("size=#{data |> Jason.encode!() |> byte_size()}")
 
-        {now, data}
+        {index, now, data}
       else
         Logger.debug("[diff=#{diff}] Not sending current data event")
-        {assigns.last_event_sent_at, nil}
+        {assigns.last_current_event_index, assigns.last_current_event_sent_at, nil}
       end
 
     socket =
       socket
       |> assign(:current_position, new_position)
       |> assign(:current_coordinates, new_coordinates)
-      |> assign(:last_event_sent_at, last_event_sent_at)
+      |> assign(:last_current_event_sent_at, last_current_event_sent_at)
+      |> assign(:last_current_event_index, last_current_event_index)
 
     socket =
       if current_data do

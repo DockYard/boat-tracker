@@ -27,14 +27,18 @@ defmodule BoatVisualizer.NetCDF do
 
     Logger.info("Interpolating values")
 
-    {speed, direction, time_t} =
-      filter_epoch_and_interpolate_to_seconds(
-        speed,
-        direction,
-        file_data.t.value,
-        start_mjd,
-        end_mjd
-      )
+    {duration, {speed, direction, time_t}} =
+      :timer.tc(fn ->
+        filter_epoch_and_interpolate_to_seconds(
+          speed,
+          direction,
+          file_data.t.value,
+          start_mjd,
+          end_mjd
+        )
+      end)
+
+    Logger.info("Interpolation duration #{duration / 1_000_000} seconds")
 
     lat_t = Nx.tensor(file_data.lat.value)
     lon_t = Nx.tensor(file_data.lon.value)
@@ -53,15 +57,23 @@ defmodule BoatVisualizer.NetCDF do
   end
 
   @doc """
-  Returns data for the requested timestamp and bounding box.
+  Returns data for the requested time index and bounding box.
   """
   def get_geodata(
-        time,
+        time_idx,
         min_lat,
         max_lat,
         min_lon,
         max_lon
       ) do
+    Agent.get(__MODULE__, fn state ->
+      Enum.filter(state.geodata[time_idx], fn [lon, lat, _direction, _speed] ->
+        lon >= min_lon and lon <= max_lon and lat >= min_lat and lat <= max_lat
+      end)
+    end)
+  end
+
+  def get_geodata_time_index(time) do
     Agent.get(__MODULE__, fn state ->
       time_idx =
         state.time
@@ -71,9 +83,7 @@ defmodule BoatVisualizer.NetCDF do
 
       Logger.debug("time_idx: #{time_idx}")
 
-      Enum.filter(state.geodata[time_idx], fn [lon, lat, _direction, _speed] ->
-        lon >= min_lon and lon <= max_lon and lat >= min_lat and lat <= max_lat
-      end)
+      time_idx
     end)
   end
 
@@ -171,13 +181,15 @@ defmodule BoatVisualizer.NetCDF do
     p_values = Nx.tensor(p_values)
 
     Logger.debug("Interpolating speed")
+    IO.inspect(speed)
     speed = interpolate(speed, indices, Nx.new_axis(p_values, 1))
+    IO.inspect(speed)
 
     Logger.debug("Interpolating direction")
     direction = interpolate(direction, indices, Nx.new_axis(p_values, 1))
 
     Logger.debug("Interpolating time")
-    time = interpolate(Nx.tensor(time) |> IO.inspect(), IO.inspect(indices), IO.inspect(p_values))
+    time = interpolate(Nx.tensor(time), indices, p_values)
 
     IO.inspect(time, label: "time result")
 

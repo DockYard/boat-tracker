@@ -7,4 +7,6 @@
   <button phx-click="toggle_track"><%= if @show_track, do: "Hide", else: "Show" %></button>
   <!-- <button phx-click="add_current_markers">Plot Current Markers</button> -->
   <button phx-click="clear" :if={@show_track}>Clear</button>
+  <button phx-click={Phoenix.LiveView.JS.dispatch("animateTime", detail: %{play: true}, to: "#map")}>Start</button>
+  <button phx-click={Phoenix.LiveView.JS.dispatch("animateTime", detail: %{play: false}, to: "#map")}>Stop</button>
 </div>

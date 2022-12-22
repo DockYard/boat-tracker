@@ -3,8 +3,6 @@ import "leaflet-canvas-markers";
 
 const colorArrayToRgb = ([r, g, b]) => `rgb(${r}, ${g}, ${b})`;
 
-let previousLayer = undefined;
-
 const colorLerp = ([s_r, s_g, s_b], [e_r, e_g, e_b], t) => {
   const lerp = (x, y, t) => Math.round(x + (y - x) * t);
   return colorArrayToRgb([
@@ -82,6 +80,7 @@ const CustomIconMarker = L.CircleMarker.extend({
 
 export function interactiveMap(hook) {
   let divElement = hook.el;
+  hook.previousLayer = undefined;
 
   var map = Leaflet.map(divElement, { preferCanvas: true }).setView(
     [42.27, -70.997],
@@ -141,6 +140,23 @@ export function interactiveMap(hook) {
     const [latitude, longitude] = trackCoordinates[position];
     marker.setLatLng({ lat: latitude, lng: longitude });
     polyline.setLatLngs(trackCoordinates.slice(0, position));
+  });
+
+  window.addEventListener("animateTime", ({ detail: { play } }) => {
+    hook.timeoutHandler && clearInterval(hook.timeoutHandler);
+
+    if (play) {
+      hook.timeoutHandler = setInterval(() => {
+        const posElement = window.document.getElementById("position");
+        if (!posElement) {
+          return;
+        }
+
+        posElement.stepUp(100);
+        const position = posElement.value;
+        hook.pushEvent("set_position", { position });
+      }, 250);
+    }
   });
 
   window.addEventListener(`phx:map_view`, (e) => {
@@ -213,7 +229,7 @@ export function interactiveMap(hook) {
     });
 
     map.addLayer(layer);
-    previousLayer && map.removeLayer(previousLayer);
-    previousLayer = layer;
+    hook.previousLayer && map.removeLayer(hook.previousLayer);
+    hook.previousLayer = layer;
   });
 }
