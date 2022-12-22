@@ -78,7 +78,7 @@ defmodule BoatVisualizerWeb.MapLive do
 
     {last_current_event_index, last_current_event_sent_at, current_data} =
       if index != assigns.last_current_event_index and
-           ((throttle and diff > 0.25) or not throttle) do
+           ((throttle and diff > 1 / 60) or not throttle) do
         Logger.debug("[diff=#{diff}] Sending current data event")
 
         %{
@@ -94,7 +94,6 @@ defmodule BoatVisualizerWeb.MapLive do
 
         {index, now, data}
       else
-        Logger.debug("[diff=#{diff}] Not sending current data event")
         {assigns.last_current_event_index, assigns.last_current_event_sent_at, nil}
       end
 
@@ -123,9 +122,6 @@ defmodule BoatVisualizerWeb.MapLive do
      |> assign(:show_track, !value)
      |> push_event("toggle_track", %{value: !value})}
   end
-
-  # def handle_event("update_currents", _, %{assigns: assigns} = socket) do
-  # end
 
   def handle_info({"track_coordinates", coordinates}, socket) do
     {:noreply, push_event(socket, "track_coordinates", %{coordinates: coordinates})}

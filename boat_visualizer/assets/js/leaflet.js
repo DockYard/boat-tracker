@@ -146,16 +146,30 @@ export function interactiveMap(hook) {
     hook.timeoutHandler && clearInterval(hook.timeoutHandler);
 
     if (play) {
-      hook.timeoutHandler = setInterval(() => {
+      const fps = 30;
+
+      const timeoutHandler = setInterval(() => {
         const posElement = window.document.getElementById("position");
+        const inc = 30;
+
         if (!posElement) {
+          clearInterval(timeoutHandler);
           return;
         }
 
-        posElement.stepUp(100);
-        const position = posElement.value;
-        hook.pushEvent("set_position", { position });
-      }, 250);
+        if (
+          parseInt(posElement.value) >=
+          parseInt(posElement.max) - (inc + 1)
+        ) {
+          clearInterval(timeoutHandler);
+        } else {
+          posElement.stepUp(inc);
+          const position = posElement.value;
+          hook.pushEvent("set_position", { position });
+        }
+      }, 1000 / fps);
+
+      hook.timeoutHandler = timeoutHandler;
     }
   });
 
