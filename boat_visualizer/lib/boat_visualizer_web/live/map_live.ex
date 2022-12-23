@@ -83,16 +83,23 @@ defmodule BoatVisualizerWeb.MapLive do
     now = now + us / 1_000_000
     diff = now - assigns.last_current_event_sent_at
 
-    {time, _, _} = new_coordinates
-    {t0, _, _} = Enum.at(assigns.coordinates, 0)
-    milliseconds_diff = NaiveDateTime.diff(time, t0, :millisecond)
-    time = BoatVisualizer.NetCDF.epoch() + milliseconds_diff / (24 * :timer.hours(1))
+    {_time, new_lat, new_lon} = new_coordinates
+    # {t0, _, _} = Enum.at(assigns.coordinates, 0)
+    # {t1, _, _} = Enum.at(assigns.coordinates, -1)
+    # dt = NaiveDateTime.diff(t1, t0)
+
+    # milliseconds_diff = NaiveDateTime.diff(time, t0, :millisecond)
+    # time = BoatVisualizer.NetCDF.epoch() + milliseconds_diff / (24 * :timer.hours(1))
+    time = BoatVisualizer.NetCDF.epoch() + 2 * (new_position / length(assigns.coordinates))
 
     index = BoatVisualizer.NetCDF.get_geodata_time_index(time)
+    Logger.info("Time: #{time}; Time Index: #{index}")
+
+    dt = Cldr.Calendar.datetime_from_modified_julian_date(time)
 
     {last_current_event_index, last_current_event_sent_at, current_data} =
       if index != assigns.last_current_event_index and
-           ((throttle and diff > 1 / 60) or not throttle) do
+           ((throttle and diff > 1 / 30) or not throttle) do
         Logger.debug("[diff=#{diff}] Sending current data event")
 
         %{
@@ -117,7 +124,7 @@ defmodule BoatVisualizerWeb.MapLive do
     socket =
       socket
       |> assign(:current_position, new_position)
-      |> assign(:current_coordinates, new_coordinates)
+      |> assign(:current_coordinates, {DateTime.to_naive(dt), new_lat, new_lon})
       |> assign(:last_current_event_sent_at, last_current_event_sent_at)
       |> assign(:last_current_event_index, last_current_event_index)
 

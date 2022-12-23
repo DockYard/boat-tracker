@@ -72,7 +72,8 @@ defmodule BoatVisualizer.NetCDF do
       original_idx = state.original_indices[time_idx]
 
       speed = interpolate(state.speed, original_idx, state.p_values[time_idx])
-      direction = interpolate(state.direction, original_idx, state.p_values[time_idx])
+
+      direction = interpolate_direction(state.direction, original_idx, state.p_values[time_idx])
 
       Geodata.GeoData.encode(%Geodata.GeoData{
         currents:
@@ -223,6 +224,12 @@ defmodule BoatVisualizer.NetCDF do
     x1 = Nx.take(tensor, indices + 1)
 
     x0 * (1 - p) + x1 * p
+  end
+
+  defn interpolate_direction(tensor, indices, p) do
+    x0 = Nx.take(tensor, indices)
+    x1 = Nx.take(tensor, indices + 1)
+    Nx.select(p <= 0.5, x0, x1)
   end
 
   defp render_data(speed, direction, lat, lon, min_lat, min_lon, max_lat, max_lon, zoom_level) do
