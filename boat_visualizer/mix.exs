@@ -51,7 +51,8 @@ defmodule BoatVisualizer.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:netcdf, "~> 0.1", github: "DockYard/netcdf"},
       {:exla, "~> 0.4"},
-      {:ex_cldr_calendars, "~> 1.21"}
+      {:ex_cldr_calendars, "~> 1.21"},
+      {:protobuf, "~> 0.11.0"}
     ]
   end
 

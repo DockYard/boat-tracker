@@ -65,7 +65,8 @@ defmodule BoatVisualizer.NetCDF do
         min_lat,
         max_lat,
         min_lon,
-        max_lon
+        max_lon,
+        zoom_level
       ) do
     Agent.get(__MODULE__, fn state ->
       original_idx = state.original_indices[time_idx]
@@ -73,7 +74,20 @@ defmodule BoatVisualizer.NetCDF do
       speed = interpolate(state.speed, original_idx, state.p_values[time_idx])
       direction = interpolate(state.direction, original_idx, state.p_values[time_idx])
 
-      render_data(speed, direction, state.lat, state.lon, min_lat, min_lon, max_lat, max_lon)
+      Geodata.GeoData.encode(%Geodata.GeoData{
+        currents:
+          render_data(
+            speed,
+            direction,
+            state.lat,
+            state.lon,
+            min_lat,
+            min_lon,
+            max_lat,
+            max_lon,
+            zoom_level
+          )
+      })
     end)
   end
 
@@ -211,12 +225,27 @@ defmodule BoatVisualizer.NetCDF do
     x0 * (1 - p) + x1 * p
   end
 
-  defp render_data(speed, direction, lat, lon, min_lat, min_lon, max_lat, max_lon) do
+  defp render_data(speed, direction, lat, lon, min_lat, min_lon, max_lat, max_lon, zoom_level) do
+    step =
+      cond do
+        zoom_level >= 13.5 -> 1
+        zoom_level >= 13 -> 2
+        zoom_level >= 12 -> 4
+        zoom_level >= 11 -> 8
+        true -> 10
+      end
+
+    Logger.debug("Zoom level: #{zoom_level}; Step: #{step}")
+
     speed
     |> filter_bounding_box(direction, lat, lon, min_lat, min_lon, max_lat, max_lon)
     |> Nx.to_flat_list()
     |> Enum.chunk_every(4)
     |> Enum.reject(fn [_, _, _, s] -> s == 0 end)
+    |> Enum.take_every(step)
+    |> Enum.map(fn [lon, lat, direction, speed] ->
+      %Geodata.Current{lon: lon, lat: lat, direction: direction, speed: speed}
+    end)
   end
 
   deftransformp filter_bounding_box(

@@ -45,8 +45,20 @@ defmodule BoatVisualizerWeb.MapLive do
     {:ok, socket}
   end
 
-  def handle_event("change_bounds", %{"bounds" => bounding_box}, socket) do
-    {:reply, %{ok: true}, assign(socket, :bounding_box, bounding_box)}
+  def handle_event(
+        "change_bounds",
+        %{"bounds" => bounding_box, "position" => position, "zoom_level" => zoom_level},
+        socket
+      ) do
+    Logger.info("=======")
+    Logger.info("Change bounds")
+    Logger.info("=======")
+
+    handle_event(
+      "set_position",
+      %{"zoom_level" => zoom_level},
+      assign(socket, :bounding_box, bounding_box)
+    )
   end
 
   def handle_event("set_position", event_data, %{assigns: assigns} = socket) do
@@ -58,6 +70,8 @@ defmodule BoatVisualizerWeb.MapLive do
         pos ->
           {true, String.to_integer(pos)}
       end
+
+    zoom_level = event_data["zoom_level"] || 15
 
     new_coordinates = Enum.at(assigns.coordinates, new_position)
     Animation.set_marker_position(new_position)
@@ -88,9 +102,12 @@ defmodule BoatVisualizerWeb.MapLive do
           "max_lon" => max_lon
         } = assigns.bounding_box
 
-        data = BoatVisualizer.NetCDF.get_geodata(index, min_lat, max_lat, min_lon, max_lon)
+        data =
+          index
+          |> BoatVisualizer.NetCDF.get_geodata(min_lat, max_lat, min_lon, max_lon, zoom_level)
+          |> Base.encode64()
 
-        Logger.debug("size=#{data |> Jason.encode!() |> byte_size()}")
+        Logger.debug("size=#{byte_size(data)}")
 
         {index, now, data}
       else

@@ -1,5 +1,6 @@
 import Leaflet from "leaflet";
 import "leaflet-canvas-markers";
+import { GeoData } from "./geodata_pb.js";
 
 const colorArrayToRgb = ([r, g, b]) => `rgb(${r}, ${g}, ${b})`;
 
@@ -105,15 +106,21 @@ export function interactiveMap(hook) {
       _northEast: { lat: max_lat, lng: max_lon },
     } = map.getBounds();
 
-    hook.pushEvent(
-      "change_bounds",
-      {
-        bounds: { min_lat, max_lat, min_lon, max_lon },
-      },
-      (result) => {
-        result?.ok && hook.pushEvent("set_position", {});
-      }
-    );
+    const bounds = { min_lat, max_lat, min_lon, max_lon };
+
+    const position = document.getElementById("position").value;
+    const zoom_level = map.getZoom();
+    hook.pushEvent("change_bounds", {
+      bounds,
+      position,
+      zoom_level,
+    });
+  });
+
+  window.addEventListener("handleSetPosition", (e) => {
+    // "set_position";
+    const position = document.getElementById("position").value;
+    hook.pushEvent("set_position", { position, zoom_level: map.getZoom() });
   });
 
   window.addEventListener(`phx:track_coordinates`, (e) => {
@@ -165,7 +172,10 @@ export function interactiveMap(hook) {
         } else {
           posElement.stepUp(inc);
           const position = posElement.value;
-          hook.pushEvent("set_position", { position });
+          hook.pushEvent("set_position", {
+            position,
+            zoom_level: map.getZoom(),
+          });
         }
       }, 1000 / fps);
 
@@ -205,7 +215,11 @@ export function interactiveMap(hook) {
       renderer: canvasRenderer,
     };
 
-    const data = e.detail.current_data.map(([lon, lat, direction, speed]) => {
+    const binData = e.detail.current_data;
+    const deserialized = GeoData.deserializeBinary(binData);
+    const data = deserialized.array[0];
+
+    const geojsonData = data.map(([lat, lon, speed, direction]) => {
       return {
         type: "Feature",
         geometry: {
@@ -216,7 +230,7 @@ export function interactiveMap(hook) {
       };
     });
 
-    const layer = L.geoJSON(data, {
+    const layer = L.geoJSON(geojsonData, {
       pointToLayer: function (feature, latlng) {
         const { direction, speed } = feature.properties;
 

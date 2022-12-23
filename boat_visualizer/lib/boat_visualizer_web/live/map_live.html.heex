@@ -1,6 +1,6 @@
 <div class="container">
   <div id="map" phx-hook="Leaflet" phx-update="ignore"></div><br>
-    <form phx-change="set_position" phx-click="set_position">
+    <form phx-change={Phoenix.LiveView.JS.dispatch("handleSetPosition")} phx-click={Phoenix.LiveView.JS.dispatch("handleSetPosition")}>
       <label for="position"><%= print_coordinates(@current_coordinates) %></label>
       <input style="width:100%" type="range" id="position" name="position" value={@current_position} min="0" max={@max_position}>
     </form>
