@@ -100,7 +100,6 @@ export function interactiveMap(hook) {
   marker.bindPopup("Boat Node");
 
   map.on("zoomlevelschange resize load moveend viewreset", (e) => {
-    console.log("map viewport change");
     const {
       _southWest: { lat: min_lat, lng: min_lon },
       _northEast: { lat: max_lat, lng: max_lon },
@@ -238,18 +237,31 @@ export function interactiveMap(hook) {
           return undefined;
         }
 
-        if (speed > 0 && speed < 0.05) {
+        const farZoom = map.getZoom() < 12;
+        // Remove "zero" currents for farther zoom levels
+        if (!farZoom && speed > 0 && speed < 0.05) {
           return L.circleMarker(latlng, geojsonMarkerOptions);
         }
 
+        // Remove "slow" currents for farther zooms
+        if (farZoom && speed < 0.2) {
+          return undefined;
+        }
+
         const color = interpolateColors(speed);
+
+        let scale = 1;
+        if (speed > 0 && speed <= 0.56) {
+          const minSize = 0.4;
+          scale = minSize + (speed / 0.56) * (1 - minSize);
+        }
 
         return new CustomIconMarker(latlng, {
           ...geojsonMarkerOptions,
           rotationAngle: direction,
           speed,
-          width: 12,
-          height: 6,
+          width: 12 * scale,
+          height: 6 * scale,
           fillColor: color,
           color: color,
         });

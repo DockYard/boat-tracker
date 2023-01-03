@@ -50,13 +50,9 @@ defmodule BoatVisualizerWeb.MapLive do
         %{"bounds" => bounding_box, "position" => position, "zoom_level" => zoom_level},
         socket
       ) do
-    Logger.info("=======")
-    Logger.info("Change bounds")
-    Logger.info("=======")
-
     handle_event(
       "set_position",
-      %{"zoom_level" => zoom_level},
+      %{"zoom_level" => zoom_level, "viewport_change" => true},
       assign(socket, :bounding_box, bounding_box)
     )
   end
@@ -70,6 +66,8 @@ defmodule BoatVisualizerWeb.MapLive do
         pos ->
           {true, String.to_integer(pos)}
       end
+
+    viewport_change = event_data["viewport_change"] == true
 
     zoom_level = event_data["zoom_level"] || 15
 
@@ -93,15 +91,12 @@ defmodule BoatVisualizerWeb.MapLive do
     time = BoatVisualizer.NetCDF.epoch() + 2 * (new_position / length(assigns.coordinates))
 
     index = BoatVisualizer.NetCDF.get_geodata_time_index(time)
-    Logger.info("Time: #{time}; Time Index: #{index}")
 
     dt = Cldr.Calendar.datetime_from_modified_julian_date(time)
 
     {last_current_event_index, last_current_event_sent_at, current_data} =
-      if index != assigns.last_current_event_index and
+      if (index != assigns.last_current_event_index or viewport_change) and
            ((throttle and diff > 1 / 30) or not throttle) do
-        Logger.debug("[diff=#{diff}] Sending current data event")
-
         %{
           "min_lat" => min_lat,
           "min_lon" => min_lon,
@@ -113,8 +108,6 @@ defmodule BoatVisualizerWeb.MapLive do
           index
           |> BoatVisualizer.NetCDF.get_geodata(min_lat, max_lat, min_lon, max_lon, zoom_level)
           |> Base.encode64()
-
-        Logger.debug("size=#{byte_size(data)}")
 
         {index, now, data}
       else

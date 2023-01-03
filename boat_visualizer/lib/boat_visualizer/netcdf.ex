@@ -100,7 +100,6 @@ defmodule BoatVisualizer.NetCDF do
         |> Nx.argmax(tie_break: :high)
         |> Nx.to_number()
 
-      Logger.debug("time_idx: #{time_idx}")
       time_idx
     end)
   end
@@ -241,8 +240,6 @@ defmodule BoatVisualizer.NetCDF do
         zoom_level >= 11 -> 8
         true -> 10
       end
-
-    Logger.debug("Zoom level: #{zoom_level}; Step: #{step}")
 
     speed
     |> filter_bounding_box(direction, lat, lon, min_lat, min_lon, max_lat, max_lon)
