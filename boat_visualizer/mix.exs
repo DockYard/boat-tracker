@@ -49,7 +49,7 @@ defmodule BoatVisualizer.MixProject do
       {:gettext, "~> 0.18"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:netcdf, "~> 0.1", github: "DockYard/netcdf"},
+      {:netcdf, "~> 0.1"},
       {:exla, "~> 0.4"},
       {:ex_cldr_calendars, "~> 1.21"},
       {:protobuf, "~> 0.11.0"}
