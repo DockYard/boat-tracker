@@ -85,14 +85,13 @@ defmodule BoatVisualizerWeb.MapLive do
     now = now + us / 1_000_000
     diff = now - assigns.last_current_event_sent_at
 
-    {_time, new_lat, new_lon} = new_coordinates
-    # {t0, _, _} = Enum.at(assigns.coordinates, 0)
-    # {t1, _, _} = Enum.at(assigns.coordinates, -1)
-    # dt = NaiveDateTime.diff(t1, t0)
+    {time, _new_lat, _new_lon} = new_coordinates
+    {t0, _, _} = Enum.at(assigns.coordinates, 0)
+    {t1, _, _} = Enum.at(assigns.coordinates, -1)
+    dt = NaiveDateTime.diff(t1, t0)
 
-    # milliseconds_diff = NaiveDateTime.diff(time, t0, :millisecond)
-    # time = BoatVisualizer.NetCDF.epoch() + milliseconds_diff / (24 * :timer.hours(1))
-    time = BoatVisualizer.NetCDF.epoch() + 2 * (new_position / length(assigns.coordinates))
+    milliseconds_diff = NaiveDateTime.diff(time, t0, :millisecond)
+    time = BoatVisualizer.NetCDF.epoch() + milliseconds_diff / (24 * :timer.hours(1))
 
     index = BoatVisualizer.NetCDF.get_geodata_time_index(time)
 
@@ -121,7 +120,7 @@ defmodule BoatVisualizerWeb.MapLive do
     socket =
       socket
       |> assign(:current_position, new_position)
-      |> assign(:current_coordinates, {DateTime.to_naive(dt), new_lat, new_lon})
+      |> assign(:current_coordinates, new_coordinates)
       |> assign(:last_current_event_sent_at, last_current_event_sent_at)
       |> assign(:last_current_event_index, last_current_event_index)
 
