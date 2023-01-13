@@ -48,7 +48,11 @@ defmodule BoatVisualizer.MixProject do
       {:telemetry_poller, "~> 1.0"},
       {:gettext, "~> 0.18"},
       {:jason, "~> 1.2"},
-      {:plug_cowboy, "~> 2.5"}
+      {:plug_cowboy, "~> 2.5"},
+      {:netcdf, "~> 0.1"},
+      {:exla, "~> 0.4"},
+      {:ex_cldr_calendars, "~> 1.21"},
+      {:protobuf, "~> 0.11.0"}
     ]
   end
 

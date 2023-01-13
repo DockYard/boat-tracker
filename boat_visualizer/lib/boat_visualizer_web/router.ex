@@ -18,6 +18,7 @@ defmodule BoatVisualizerWeb.Router do
     pipe_through :browser
 
     get "/page", PageController, :index
+    get "/arrow", PageController, :arrow
     live "/", MapLive
   end
 
