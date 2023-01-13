@@ -5,6 +5,7 @@
     "leaflet-canvas-geojson": "github:jrmerz/leaflet-canvas-geojson",
     "leaflet-canvas-markers": "^1.0.7",
     "leaflet-rotatedmarker": "^0.2.0",
-    "protobufjs": "^7.1.2"
+    "protobufjs": "^7.1.2",
+    "nouislider": "^15.6.1"
   }
 }
